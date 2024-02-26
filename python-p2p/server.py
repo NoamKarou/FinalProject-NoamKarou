@@ -1,29 +1,32 @@
-import socket
 import time
+from Scripts.CryptoNetwork import crypto_network_interface
 
-from P2pListener import P2pListener
-from enum import Enum
-import protocol
 import threading
 
-from operations import Operations
 
 def main():
-    t2 = threading.Thread(target=main1)
+    t1 = threading.Thread(target=p1)
+    t2 = threading.Thread(target=p2)
+    t1.start()
     t2.start()
+    t1.join()
     t2.join()
-def main1():
-    listener = P2pListener(20001)
-    listener.thread_handle.join()
 
-def main2():
+def p1():
+    return
+    interface = crypto_network_interface.interface()
+    interface.connect(20000, None, None)
     time.sleep(1)
-    print("creating listener")
-    listener = P2pListener(20000)
-    print("listener created")
+    interface.create_account("fatoush", "yuthyjgh")
+    print("tried creating user")
 
-    listener.connect(('127.0.0.1', 20001))
-    listener.thread_handle.join()
+    interface.listener.thread_handle.join()
+
+
+def p2():
+    interface = crypto_network_interface.interface()
+    interface.connect(20001, '127.0.0.1', 20000)
+    interface.listener.thread_handle.join()
 
 if __name__ == '__main__':
     main()

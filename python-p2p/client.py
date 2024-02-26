@@ -1,12 +1,8 @@
-import socket
 import time
 
-from P2pListener import P2pListener
-from enum import Enum
-import protocol
+from Scripts.P2P.P2pListener import P2pListener
 import threading
 
-from operations import Operations
 
 def main():
     t = threading.Thread(target=main2)

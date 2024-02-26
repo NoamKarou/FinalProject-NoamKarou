@@ -1,34 +1,35 @@
-import socket
 import time
 
-from P2pListener import P2pListener
-from enum import Enum
-import protocol
+from operations import Operations
+from Scripts.P2P.P2pListener import P2pListener
+from Scripts.P2P.P2pNode import P2pNode
+from Scripts.CryptoNetwork import crypto_network_interface
 import threading
 
-from operations import Operations
 
 def main():
-    t = threading.Thread(target=main1)
-    t2 = threading.Thread(target=main2)
-
-    t.start()
+    t1 = threading.Thread(target=p1)
+    t2 = threading.Thread(target=p2)
+    t1.start()
     t2.start()
-
-    t.join()
+    t1.join()
     t2.join()
-def main1():
-    listener = P2pListener(20001)
-    listener.thread_handle.join()
 
-def main2():
-    time.sleep(1)
-    print("creating listener")
+def p1():
     listener = P2pListener(20000)
-    print("listener created")
+    listener.broadcast_callback = lambda x, y: print(x)
 
-    listener.connect(('127.0.0.1', 20001))
-    listener.thread_handle.join()
+
+def p2():
+    listener = P2pListener(20001)
+    listener.connect(("127.0.0.1", 20000))
+    broadcast_dict = {
+        "id": "1",
+        "operation": Operations.TEST.value,
+        "content": "hi"
+    }
+    listener.broadcast_callback = lambda x, y: print(x)
+    listener.broadcast_to_all(broadcast_dict)
 
 if __name__ == '__main__':
     main()

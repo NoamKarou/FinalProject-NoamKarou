@@ -1,0 +1,10 @@
+from enum import Enum
+
+class Operations(Enum):
+    TEST = 1
+    CONNECTION_ESTABLISHMENT = 2
+    BROADCASTING = 3
+    SEND_TEST_MESSAGE = 4
+    FAILURE = 5
+    ACCOUNT_CREATION = 6
+    MINER_STATUS = 7

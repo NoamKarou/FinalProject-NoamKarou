@@ -171,6 +171,7 @@ class P2pListener:
         '''
         try:
             print(self.connected_nodes.values())
+            dict_to_broadcast['__sender'] = self.my_id
             for node in self.connected_nodes.values():
                 protocol_write(node.socket, dict_to_broadcast, Operations.BROADCASTING)
                 print(f"broadcast was sent to {node.node_id}")
@@ -180,26 +181,34 @@ class P2pListener:
             return False
 
     def broadcasting_callback(self, broadcasting_dict):
-
+        print("I HATE NIGGERS")
         try:
 
             broadcast_id = broadcasting_dict['id']
             if broadcast_id in self.broadcasts.keys():
+                print("threw package away")
                 return False
             print(f"{self.my_id}: rebroadcasting")
             self.broadcasts[broadcast_id] = broadcasting_dict
 
-            for node in self.connected_nodes.values():
+            broadcasted_operation = broadcasting_dict['operation']
+            if not self.broadcast_callback(broadcasting_dict, broadcasted_operation):
+                print('canceling broadcast because it failed')
+                return False
+
+            sender_id = broadcasting_dict['__sender']
+            for node_id,node in self.connected_nodes.items():
+                if (sender_id == node_id):
+                    continue
                 print(f"{self.my_id}: rebroadcasted")
                 print(broadcasting_dict)
                 protocol_write(node.socket, broadcasting_dict, Operations.BROADCASTING)
 
             print(broadcasting_dict['operation'])
-            broadcasted_operation = broadcasting_dict['operation']
+
 
             self.broadcasts['id'] = broadcasting_dict['id'], time.time()
 
-            self.broadcast_callback(broadcasting_dict, broadcasted_operation)
 
         except Exception as ex:
             raise ex

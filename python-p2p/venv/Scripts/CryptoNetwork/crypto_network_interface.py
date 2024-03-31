@@ -41,6 +41,7 @@ class interface:
     def create_account(self, username: str, password: str):
         try:
             if self.user_exists(username):
+                print("The duplicate account was located the right way")
                 return False
             new_user = User(username=username, password=password)
             self.database.insert_user(new_user.username, new_user.encrypted_password, new_user.public_key)
@@ -52,9 +53,9 @@ class interface:
                 "operation": Operations.ACCOUNT_CREATION.value
             }
             self.listener.broadcast_to_all(broadcasting_dict)
-            time.sleep(1)
             return True
-        except:
+        except Exception as ex:
+            raise (ex)
             return False
 
     def set_self_details(self, username):
@@ -75,26 +76,29 @@ class interface:
         try:
             if self.database.user_exists(data["username"]):
                 print("username already exists")
-                return
+                return False
 
             self.database.insert_user(data["username"], data["encrypted_password"], data["public_key"])
-            print(self.database.get_user(data["username"]).to_json())
-        except:
-            print("data was not fromatted correctly")
+            return True
+        except Exception as ex:
+            print(f"{ex}: data was not fromatted correctly")
+            return False
 
     def user_exists(self, username: str):
-        return False
+        return self.database.user_exists(username)
 
     def route_callback(self, data: dict, operation: operations.Operations):
         print(operation)
         match operation:
             case Operations.ACCOUNT_CREATION.value:
-                self.account_creation_callback(data)
+                return self.account_creation_callback(data)
             case Operations.MINER_STATUS.value:
-                self.miner_update_callback(data['username'], data['signature'], data["status"])
+                return self.miner_update_callback(data['username'], data['signature'], data["status"])
             case _:
                 print(data)
                 pass
+        return False
+
 
     miner_update_message = "miner update"
     def update_miner_status(self, status: bool):
@@ -115,9 +119,14 @@ class interface:
 
     #As of now: deprecated
     def miner_update_callback(self, username, signiture, status):
-        user, enc, pub = self.database.get_user(username)
-        print(decrypt_message(signiture, pub))
-        print(status)
+        try:
+            user, enc, pub = self.database.get_user(username)
+            print(decrypt_message(signiture, pub))
+            print(status)
+            return True
+        except Exception as ex:
+            print(f'ex from miner_update_callback {ex}')
+            return False
 
     def miner_thread(self):
         if not self.is_miner:

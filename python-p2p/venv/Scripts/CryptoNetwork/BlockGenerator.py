@@ -1,30 +1,69 @@
 import hashlib
 from Scripts.CryptoNetwork.Transaction import Transaction
 from Scripts.CryptoNetwork.UserGenerator import generate_key_pair
+import math
+
+z_count = 4
+miner_money_multiplier = 20
 
 class Block:
-    block_id: int
-    last_block: int
-    transactions: list[Transaction]
-    last_hash: str
 
-    def __init__(self, last_block=None, last_hash=None):
+
+    '''
+    ======BLOCK RULES=======
+    the first block to come wins
+    if two blocks come at the same time the one with more transactions wins
+    if they both have the same amount of transactions the one with more value in them wins
+    if they both have the same value the one with the larger hash wins
+    ========================
+    '''
+    
+    block_id: int
+    last_block_hash: int
+    miner: str
+    transactions: list[Transaction]
+    salt: str
+
+    def __init__(self, miner, last_block=None):
         if last_block is None:
-            self.last_block = 0
+            self.last_block_hash = 0
             self.block_id = 1
+            self.miner = miner
         else:
-            self.last_block = last_block
+            self.last_block_hash = last_block
             self.block_id = last_block + 1
-            self.last_hash = last_hash
+            self.miner = miner
+        self.salt = "None"
         self.transactions = list()
 
     def hash_block(self):
         to_hash = ''
-        to_hash += f'{self.block_id}{self.last_block}'
+        to_hash += f'{self.block_id}{self.last_block_hash}'
         for transaction in self.transactions:
-            to_hash += transaction.generate_signature()
+            to_hash += transaction.generate_transaction_text()
+        to_hash += f'{self.salt}'
         return hash_string_sha256(to_hash)
 
+    def validate_block_signature(self):
+        block_hash = self.hash_block()
+        digest_bytes = bytes.fromhex(block_hash[0: math.ceil(z_count / 8) * 2])
+        hash_bits = ''.join(format(byte, '08b') for byte in digest_bytes)
+        if not compare_bits_to_zero(hash_bits):
+            return False
+
+        return True
+
+    
+    def __str__(self):
+        ret = ''
+        ret += f'=====Begin block info for block: {self.block_id}==============\n'
+        ret += f'miner: {self.miner}-received {(len(self.transactions)+1) * miner_money_multiplier} for creating the block\n'
+        for transaction in self.transactions:
+            ret += f'transaction: {transaction.generate_transaction_text()} : {transaction.signature}\n'
+        ret += f'the salt of the block is: {self.salt}\n'
+        ret += f'{self.hash_block()}\n'
+        ret += f'=====End info for block {self.block_id}============='
+        return ret
 
 def hash_string_sha256(input_string):
     encoded_string = input_string.encode('utf-8')
@@ -35,9 +74,12 @@ def hash_string_sha256(input_string):
     return hashed_string
 
 
+def compare_bits_to_zero(bit_arr):
+    return bit_arr == ''.zfill(len(bit_arr))
+
 if __name__ == '__main__':
     pub, priv = generate_key_pair()
-    block = Block(last_block=0, last_hash="hkjdgfkjlhfdgkjhdfgkjhdgfk")
+    block = Block(miner="noam" ,last_block=0)
     transactions = list()
 
     transactions.append(Transaction("noam", "itamar", 200, key=priv))
@@ -46,4 +88,4 @@ if __name__ == '__main__':
 
     block.transactions = transactions
 
-    print(block.hash_block())
+    print(block)

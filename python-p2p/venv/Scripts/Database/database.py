@@ -1,5 +1,10 @@
+import random
 import sqlite3
 import os
+from Scripts.CryptoNetwork.tests.BlockGeneratorTests import generate_random_block, add_people_to_database
+from Scripts.CryptoNetwork.BlockGenerator import Block
+from Scripts.CryptoNetwork.Transaction import Transaction
+
 
 class PeerToPeerDatabase:
     def __init__(self, port, db_folder='  '):
@@ -25,32 +30,26 @@ class PeerToPeerDatabase:
         ''')
         cursor.execute('''
                     CREATE TABLE IF NOT EXISTS transactions (
-                        tx_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        tx_id INTEGER PRIMARY KEY,
+                        block_id INTEGER,
                         sender_id INTEGER,
                         receiver_id INTEGER,
                         amount REAL,
-                        timestamp DATETIME,
                         FOREIGN KEY (sender_id) REFERENCES users(user_id),
-                        FOREIGN KEY (receiver_id) REFERENCES users(user_id)
+                        FOREIGN KEY (receiver_id) REFERENCES users(user_id),
+                        FOREIGN KEY (block_id) REFERENCES blocks(block_id)
                     )
                 ''')
         cursor.execute('''
                     CREATE TABLE IF NOT EXISTS blocks (
                         block_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         previous_block_id INTEGER,
-                        timestamp DATETIME,
-                        nonce INTEGER,
+                        previous_block_hash TEXT,
+                        miner TEXT,
                         FOREIGN KEY (previous_block_id) REFERENCES blocks(block_id)
                     )
                 ''')
-        cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS block_transactions (
-                        block_id INTEGER,
-                        tx_id INTEGER,
-                        FOREIGN KEY (block_id) REFERENCES blocks(block_id),
-                        FOREIGN KEY (tx_id) REFERENCES transactions(tx_id)
-                    )
-                ''')
+
         conn.commit()
         conn.close()
 
@@ -94,9 +93,116 @@ class PeerToPeerDatabase:
         conn.commit()
         conn.close()
 
+
+    '''
+    ================== TRANSACTIONS ==================
+    '''
+
+    def add_transaction(self, transaction: Transaction, block_id):
+        transaction_id = transaction.id
+        sender_id = transaction.sender
+        receiver_id = transaction.receiver
+        amount = transaction.amount
+
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+
+        try:
+            # Insert transaction into the transactions table
+            cursor.execute('''
+                INSERT INTO transactions (tx_id, block_id, sender_id, receiver_id, amount)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (transaction_id, block_id, sender_id, receiver_id, amount))
+
+            conn.commit()
+            print("Transaction added successfully.")
+        except sqlite3.Error as e:
+            print("Error occurred:", e)
+
+        conn.close()
+
+    # Function to retrieve all transactions for a given user
+    def get_transaction(self, transaction_id):
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT tx_id, block_id, sender_id, receiver_id, amount
+            FROM transactions
+            WHERE tx_id = ?
+        ''', (transaction_id,))
+
+        transactions = cursor.fetchall()
+        conn.close()
+
+        return transactions
+
+    '''
+    ================== blocks ==================
+    '''
+
+    def add_block(self, block: Block, add_transactions = True):
+        block_id = block.block_id
+        previous_block_id = block.block_id - 1
+        previous_block_hash = block.last_block_hash
+        miner = block.miner
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+
+        try:
+            # Insert transaction into the transactions table
+            cursor.execute('''
+                INSERT INTO blocks (block_id, previous_block_id, previous_block_hash, miner)
+                VALUES (?, ?, ?, ?)
+            ''', (block_id, previous_block_id, previous_block_hash, miner))
+            conn.commit()
+            print("Transaction added successfully.")
+        except sqlite3.Error as e:
+            print("Error occurred:", e)
+
+        conn.close()
+
+        try:
+            if add_transactions:
+                for transaction in block.transactions:
+                    self.add_transaction(transaction, block_id)
+        except sqlite3.Error as e:
+            print("Error occurred:", e)
+
+    # Function to retrieve all transactions for a given user
+    def get_block(self, block_id):
+        '''
+        CREATE TABLE IF NOT EXISTS blocks (
+                        block_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        previous_block_id INTEGER,
+                        previous_block_hash TEXT,
+                        miner TEXT,
+                        FOREIGN KEY (previous_block_id) REFERENCES blocks(block_id)
+        '''
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT block_id, previous_block_id, previous_block_hash, miner
+            FROM blocks
+            WHERE block_id = ?
+        ''', (block_id,))
+
+        transactions = cursor.fetchall()
+        conn.close()
+
+        return transactions
+
+
 # Example usage:
-# database = PeerToPeerDatabase(port=8080)
-# print(database.user_exists('user1'))  # False
-# database.insert_user('user1', 'password1', 'key1')
-# print(database.user_exists('user1'))  # True
-# ...
+
+if __name__ == '__main__':
+    database = PeerToPeerDatabase(port=random.randint(1, 65000))
+    add_people_to_database(database)
+    block = generate_random_block(last_block=0)
+    print(block)
+    database.add_transaction(block.transactions[0], block.block_id)
+    print(database.get_transaction(block.transactions[0].id))
+    database.add_block(block)
+    print(database.get_block(block.block_id))
+

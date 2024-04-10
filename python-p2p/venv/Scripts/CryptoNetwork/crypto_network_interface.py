@@ -128,6 +128,9 @@ class interface:
             print(f'ex from miner_update_callback {ex}')
             return False
 
+    #def generate_id(self):
+        #self.listener.
+
     def miner_thread(self):
         if not self.is_miner:
             return

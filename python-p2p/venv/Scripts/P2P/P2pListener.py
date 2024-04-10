@@ -54,8 +54,8 @@ class P2pListener:
         print("running the server loop")
         self.server_socket.listen()
         while True:
-            client_socket, addr = self.server_socket.accept()
-            print(f'{self.my_id}: accepted client: {addr}')
+            client_socket, self.addr = self.server_socket.accept()
+            print(f'{self.my_id}: accepted client: {self.addr}')
             status, username = self.server_handshake_protocol(client_socket)
             if status:
                 print("clients username: " + username)

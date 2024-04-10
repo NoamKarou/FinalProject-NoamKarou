@@ -1,6 +1,8 @@
 import tkinter as tk
 import random
 from tkinter import messagebox
+import customtkinter as ctk
+from Scripts.UserInterface.Components import Logo
 
 class ConnectToServer:
     def __init__(self, master, connect_callback=None, my_port=None):
@@ -19,24 +21,31 @@ class ConnectToServer:
             if self.connect_callback:
                 self.connect_callback(ip, port, my_port)
 
-        except ValueError:
+        except Exception as ex:
+            raise (ex)
             messagebox.showerror("Error", "Invalid port. Please enter a valid integer.")
             return
 
     def create_frame(self):
-        frame = tk.Frame(self.master, padx=10, pady=10)
+        frame = ctk.CTkFrame(self.master)
+
+        logo_component = Logo.Logo(frame)
+        logo_component.frame.pack(pady=15)
+
+        #empty_label = ctk.CTkLabel(frame, text="\nwelcome to the CBT network!")
+        #empty_label.pack(pady=15)
 
         # IP entry with default text
-        ip_label = tk.Label(frame, text="Server IP:")
+        ip_label = ctk.CTkLabel(frame, text="Server IP:")
         ip_label.pack(pady=5)
-        ip_entry = tk.Entry(frame)
+        ip_entry = ctk.CTkEntry(frame)
         ip_entry.insert(0, "127.0.0.1")  # Default text
         ip_entry.pack(pady=5)
 
         # Port entry with default text
-        port_label = tk.Label(frame, text="Server Port:")
+        port_label = ctk.CTkLabel(frame, text="Server Port:")
         port_label.pack(pady=5)
-        port_entry = tk.Entry(frame)
+        port_entry = ctk.CTkEntry(frame)
         if self.my_port is not None:
             port_entry.insert(0, str(self.my_port))
         else:
@@ -44,14 +53,14 @@ class ConnectToServer:
         port_entry.pack(pady=5)
 
         # My Port entry with default text
-        my_port_label = tk.Label(frame, text="My Port:")
+        my_port_label = ctk.CTkLabel(frame, text="My Port:")
         my_port_label.pack(pady=5)
-        my_port_entry = tk.Entry(frame)
+        my_port_entry = ctk.CTkEntry(frame)
         my_port_entry.insert(0, str(random.randint(1024, 49151)))  # Default random port
         my_port_entry.pack(pady=5)
 
         # Connect button with user-defined callback function
-        connect_button = tk.Button(frame, text="Connect", command=lambda: self.connect_to_server(ip_entry, port_entry, my_port_entry))
+        connect_button = ctk.CTkButton(frame, text="Connect", command=lambda: self.connect_to_server(ip_entry, port_entry, my_port_entry))
         connect_button.pack(pady=10)
 
         return frame

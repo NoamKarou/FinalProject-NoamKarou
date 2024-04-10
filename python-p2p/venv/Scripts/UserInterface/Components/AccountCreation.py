@@ -1,10 +1,16 @@
 import tkinter as tk
 from tkinter import messagebox
-
+import customtkinter as ctk
 class AccountCreation:
-    def __init__(self, root, on_successful_account_creation, on_retry_creation, creation_callback):
+    def __init__(self, root, on_successful_account_creation, on_retry_creation, creation_callback, main_menu_callback=None):
         self.root = root
         self.root.title("Creation Menu")
+
+        self.root = ctk.CTkFrame(self.root)
+        root = ctk.CTkFrame(self.root)
+
+        empty_label = ctk.CTkLabel(root, text="\nsign up:\n------------------------------------")
+        empty_label.pack()
 
         self.on_successful_account_creation = on_successful_account_creation
         self.on_retry_creation = on_retry_creation
@@ -15,18 +21,28 @@ class AccountCreation:
         self.password_var = tk.StringVar()
 
         # Create labels, entry fields, and login button
-        username_label = tk.Label(root, text="Username:")
+        username_label = ctk.CTkLabel(root, text="Username:")
         username_label.pack(pady=10)
-        username_entry = tk.Entry(root, textvariable=self.username_var)
+        username_entry = ctk.CTkEntry(root, textvariable=self.username_var)
         username_entry.pack(pady=5)
 
-        password_label = tk.Label(root, text="Password:")
+        password_label = ctk.CTkLabel(root, text="Password:")
         password_label.pack(pady=10)
-        password_entry = tk.Entry(root, textvariable=self.password_var, show="*")
+        password_entry = ctk.CTkEntry(root, textvariable=self.password_var, show="*")
         password_entry.pack(pady=5)
 
-        login_button = tk.Button(root, text="Sign-Up", command=self.check_login)
-        login_button.pack(pady=10)
+        login_button = ctk.CTkButton(root, text="Sign-Up", command=self.check_login)
+        login_button.pack(pady=10, padx=40)
+
+        self.main_menu_callback = main_menu_callback
+        return_button = ctk.CTkButton(root, text="back", command=self.main_menu_callback)
+        return_button.pack()
+
+        empty_label = ctk.CTkLabel(root, text="")
+        empty_label.pack()
+
+        root.pack()
+        self.root.pack(pady=25)
 
     def check_login(self):
         # Check login details (replace this with your actual authentication logic)

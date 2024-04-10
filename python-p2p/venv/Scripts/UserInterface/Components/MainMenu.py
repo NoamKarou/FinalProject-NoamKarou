@@ -1,26 +1,36 @@
 import tkinter as tk
 from tkinter import ttk
-
+from Scripts.UserInterface import Colors
+import customtkinter as ctk
 class MainMenu:
+    header_color: str
     def __init__(self, root):
+        self.header_color = "#d8d8d8"
         self.root = root
         # Calculate the screen height
         screen_height = self.root.winfo_screenheight()
+        screen_width = self.root.winfo_screenheight()
 
-        self.frame = tk.Frame(root)
+        self.frame = ctk.CTkFrame(root)
         self.frame.pack(fill=tk.BOTH, expand=True)
         # Create a frame for the header
         header_height = int(screen_height / 2)
-        self.header_frame = tk.Frame(self.frame, height=header_height)
+        self.header_frame = ctk.CTkFrame(self.frame, height=header_height)
         self.header_frame.pack(side=tk.TOP, fill=tk.X)
 
+        self.sidebar = ctk.CTkFrame(self.frame, width=int(screen_width/5.5), fg_color='gray17')
+        self.sidebar.pack(fill=tk.Y, side=tk.LEFT)
+
         # Create a notebook for the tabbed interface
-        self.notebook = ttk.Notebook(self.frame)
+        self.notebook = ctk.CTkTabview(self.frame, anchor='w')
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
         # Create a frame for the tab
         self.tab_frame = tk.Frame(self.notebook)
-        self.notebook.add(self.tab_frame, text="Tab")
+        self.notebook.add("create\n transfer ")
+        self.notebook.add(" transaction \nhistory ")
+        self.notebook.add(" network \n mapper ")
+        self.notebook.add(" current \n connections ")
 
         # Add widgets to the tab frame
         tab_label = tk.Label(self.tab_frame, text="Tab Section")

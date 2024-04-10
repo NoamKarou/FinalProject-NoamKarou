@@ -1,35 +1,36 @@
-import time
-
-from operations import Operations
-from Scripts.P2P.P2pListener import P2pListener
-from Scripts.P2P.P2pNode import P2pNode
-from Scripts.CryptoNetwork import crypto_network_interface
-import threading
+import tkinter as tk
 
 
-def main():
-    t1 = threading.Thread(target=p1)
-    t2 = threading.Thread(target=p2)
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
+class MyApp:
+    def __init__(self, function):
+        self.function = function
 
-def p1():
-    listener = P2pListener(20000)
-    listener.broadcast_callback = lambda x, y: print(x)
+        # Create the main application window
+        self.root = tk.Tk()
+        self.root.title("Tkinter App")
+
+        # Create a button widget
+        self.button = tk.Button(self.root, text="Click me!", command=self.execute_function)
+        self.button.pack(pady=20)
+
+    def execute_function(self):
+        self.function()
+
+    def run(self):
+        # Run the Tkinter event loop
+        self.root.mainloop()
 
 
-def p2():
-    listener = P2pListener(20001)
-    listener.connect(("127.0.0.1", 20000))
-    broadcast_dict = {
-        "id": "1",
-        "operation": Operations.TEST.value,
-        "content": "hi"
-    }
-    listener.broadcast_callback = lambda x, y: print(x)
-    listener.broadcast_to_all(broadcast_dict)
 
-if __name__ == '__main__':
-    main()
+
+
+
+
+
+def my_function():
+    print("Button clicked!")
+
+
+# Create an instance of the MyApp class, passing the function to execute
+app = MyApp(my_function)
+app.run()

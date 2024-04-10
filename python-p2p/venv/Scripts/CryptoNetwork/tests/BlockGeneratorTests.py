@@ -3,6 +3,8 @@ import string
 from Scripts.CryptoNetwork.BlockGenerator import Block, generate_key_pair
 from Scripts.CryptoNetwork.Transaction import Transaction
 from faker import Faker
+#from Scripts.Database.database import PeerToPeerDatabase
+from Scripts.CryptoNetwork.UserGenerator import User
 
 fake = Faker()
 
@@ -10,6 +12,15 @@ fake = Faker()
 
 # Define a function to generate random names
 names = ["Alice", "Bob", "Ryan", "Sophia", "Thomas", "Ursula", "Victor", "Wendy", "Xavier", "Yvonne", "Zach"]
+
+def add_people_to_database(db):
+    for name in names:
+        new_user = User(username=name, password='password')
+        db.insert_user(username=new_user.username,
+                       encrypted_password=new_user.encrypted_password,
+                       public_key=new_user.public_key)
+
+
 def generate_random_name():
     #return fake.first_name()
     return random.choice(names)
@@ -31,6 +42,7 @@ def generate_random_block(last_block):
         receiver = generate_random_name()
         amount = generate_random_amount()
         transaction = Transaction(sender, receiver, amount, key=priv)
+        transaction.id = random.randint(10000, 99999)
         transactions.append(transaction)
 
     block.transactions = transactions

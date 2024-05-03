@@ -42,7 +42,7 @@ def generate_random_block(last_block):
         receiver = generate_random_name()
         amount = generate_random_amount()
         transaction = Transaction(sender, receiver, amount, key=priv)
-        transaction.id = random.randint(10000, 99999)
+        transaction.id = random.randint(100000000, 999999999)
         transactions.append(transaction)
 
     block.transactions = transactions
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     last_hash = "hkjdgfkjlhfdgkjhdfgkjhdgfk"  # Assuming you have a valid last hash
 
     transactions = list()
-    for i in range(13):
+    for i in range(1):
         random_block = generate_random_block(i,  last_hash)
         last_hash = random_block.hash_block()
         print(random_block)

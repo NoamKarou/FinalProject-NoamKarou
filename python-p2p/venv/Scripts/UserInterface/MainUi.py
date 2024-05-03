@@ -5,7 +5,7 @@ from PIL import Image
 from Scripts.UserInterface.Components import (
     UserAuthenticationField, UserCreation, ConnectToServer,
     MainMenu, UserDisplayWidget, LoginMenu, AccountCreation,
-    MinerCheckbox, IDLabel, Logo)
+    MinerCheckbox, IDLabel, Logo, TransactionCreator)
 
 import tkinter as tk
 
@@ -20,6 +20,7 @@ import customtkinter as ctk
 class Ui:
     main_ui_thread: threading.Thread
     root: tk.Tk
+
     def __init__(self):
         ctypes.windll.shcore.SetProcessDpiAwareness(True)
         self.main_ui_thread = threading.Thread(target=self.ui_loop)
@@ -39,7 +40,7 @@ class Ui:
 
     def ui_loop(self):
         self.root = ctk.CTk()
-        ctk.set_default_color_theme(r'D:\git\FinalProject-NoamKarou\python-p2p\venv\Lib\site-packages\customtkinter\assets\themes\red.json')
+        ctk.set_default_color_theme(r'CtkThemes/red.json')
         self.root.title("Noam")
         self.tk_username = tk.StringVar()
 
@@ -90,19 +91,25 @@ class Ui:
         self.hide_all_children()
         self.build_main_manu()
 
+
     def build_main_manu(self):
         self.main_menu = MainMenu.MainMenu(self.root)
         self.user_display = UserDisplayWidget.UserDisplayWidget(self.main_menu.frame, on_login_callback=self.load_login_screen, on_signup_callback=self.account_creation_ui)
         self.main_menu.add_widget_to_header(self.user_display)
 
-        self.miner_checkbox = MinerCheckbox.MinerCheckbox(self.main_menu.frame, self.interface.is_logged_in, self.interface.update_miner_status)
-        self.main_menu.add_widget_to_header(self.miner_checkbox.frame, side=tk.RIGHT)
+        #self.miner_checkbox = MinerCheckbox.MinerCheckbox(self.main_menu.frame, self.interface.is_logged_in, self.interface.update_miner_status)
+        #self.main_menu.add_widget_to_header(self.miner_checkbox.frame, side=tk.RIGHT)
 
         self.id_label = IDLabel.IDLabel(self.main_menu.sidebar, self.get_id)
         self.id_label.frame.pack(side = tk.BOTTOM, padx=15, pady=10)
 
         self.logo = Logo.Logo(self.main_menu.sidebar)
         self.logo.frame.pack(side=ctk.TOP, pady=16)
+
+        self.transaction_creator = TransactionCreator.TransactionCreator(self.main_menu.notebook.tab(self.main_menu.titles['transfer']), self.interface.database.get_users)
+        self.transaction_creator.master.pack(anchor="nw")
+        self.main_menu.set_login_status(self.interface.is_logged_in())
+
 
 
     def account_creation_ui(self):
@@ -139,13 +146,17 @@ class Ui:
         self.interface.my_user = username
         self.interface.username = username
         self.interface.encryption_key = encryption_key
-        self.miner_checkbox.update_state()
+        self.interface.update_miner_status(True)
+        #self.miner_checkbox.update_state()
         print(username)
         print(encryption_key)
 
     def load_main_menu(self):
         self.hide_all_children()
         self.main_menu.frame.pack(fill=tk.BOTH, expand=True)
+        self.main_menu.set_login_status(self.interface.is_logged_in())
+
+
 
 def dummy_function():
     print("dummy function called!")

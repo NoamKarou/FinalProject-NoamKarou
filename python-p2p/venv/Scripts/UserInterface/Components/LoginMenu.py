@@ -60,6 +60,8 @@ class LoginMenu:
             messagebox.showerror("Login Failed", "Incorrect username or password. Please try again.")
             self.on_retry_login()
 
+
+
 def load_main_menu():
     # Replace this with the code to load your main menu
     print("Main menu loaded!")

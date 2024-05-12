@@ -73,12 +73,15 @@ class PeerToPeerDatabase:
         conn.close()
 
     def get_user(self, username) -> tuple[str, str, str]:
-        conn = sqlite3.connect(self.db_file)
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
-        user = cursor.fetchone()
-        conn.close()
-        return user
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+            conn.close()
+            return user
+        except:
+            return None
 
     def update_user(self, username, encrypted_password, public_key):
         conn = sqlite3.connect(self.db_file)
@@ -131,19 +134,22 @@ class PeerToPeerDatabase:
 
     # Function to retrieve all transactions for a given user
     def get_transaction(self, transaction_id):
-        conn = sqlite3.connect(self.db_file)
-        cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT tx_id, block_id, sender_id, receiver_id, amount
-            FROM transactions
-            WHERE tx_id = ?
-        ''', (transaction_id,))
+            cursor.execute('''
+                SELECT tx_id, block_id, sender_id, receiver_id, amount
+                FROM transactions
+                WHERE tx_id = ?
+            ''', (transaction_id,))
 
-        transactions = cursor.fetchall()
-        conn.close()
+            transactions = cursor.fetchall()
+            conn.close()
 
-        return transactions
+            return transactions
+        except:
+            return [None]
 
     '''
     ================== blocks ==================
@@ -210,6 +216,35 @@ class PeerToPeerDatabase:
         conn.close()
         return users
 
+
+    def get_latest_block_id(self):
+        try:
+            conn =  sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT block_id
+                FROM blocks b1
+                WHERE b1.block_id = (
+                SELECT MAX(block_id)
+                FROM blocks b2
+                );
+            ''')
+            index = cursor.fetchone()
+            conn.close()
+            return index[0]
+        except:
+            return None
+
+    def check_for_transactions_in_database(self, transactions: list[Transaction]):
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        for transaction in transactions:
+            cursor.execute("SELECT 1 FROM transactions_table WHERE id = ?", (transaction.id,))
+            if cursor.fetchone() is not None:
+                transactions.remove(transaction)
+        conn.close()
+        return transactions
+
     def sum_blockchain(self, use_cache = True):
 
         if not use_cache:
@@ -266,4 +301,5 @@ if __name__ == '__main__':
     print(database.sum_blockchain())
 
     print(database.get_users())
+    print(database.get_latest_block_id())
 

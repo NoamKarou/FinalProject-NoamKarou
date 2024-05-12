@@ -7,7 +7,10 @@ from Scripts.P2P.P2pListener import P2pListener
 from Scripts.P2P.P2pNode import P2pNode
 
 from Scripts.CryptoNetwork.UserGenerator import User
+from Scripts.CryptoNetwork.Transaction import Transaction
+from Scripts.CryptoNetwork.BlockGenerator import Block
 from Scripts.CryptoNetwork import UserGenerator
+from Scripts.CryptoNetwork.Mining import Mining
 
 from operations import Operations
 
@@ -94,6 +97,8 @@ class interface:
                 return self.account_creation_callback(data)
             case Operations.MINER_STATUS.value:
                 return self.miner_update_callback(data['username'], data['signature'], data["status"])
+            case Operations.TRANSACTION_CREATION.value:
+                return self.transaction_receive_callback(data)
             case _:
                 print(data)
                 pass
@@ -114,8 +119,9 @@ class interface:
         """
         self.is_miner = status
         if status:
-            self.active_miner_thread = threading.Thread(target=self.miner_thread)
-            self.active_miner_thread.start()
+            self.mining = Mining(self.username, self.database)
+            #self.active_miner_thread = threading.Thread(target=self.miner_thread)
+            #self.active_miner_thread.start()
 
     #As of now: deprecated
     def miner_update_callback(self, username, signiture, status):
@@ -131,6 +137,57 @@ class interface:
     #def generate_id(self):
         #self.listener.
 
+    def create_transaction(self, recevier: str, amount: int):
+        try:
+            transaction = Transaction(self.username, recevier, amount, key=self.encryption_key, id=generate_broadcast_id())
+            broadcasting_dict = {
+                "id": generate_broadcast_id(),
+                "operation": Operations.TRANSACTION_CREATION.value,
+                "transaction": transaction.to_json()
+            }
+            self.listener.broadcast_to_all(broadcasting_dict)
+            self.mining.add_transaction_to_transaction_pool(transaction)
+            return True
+        except Exception as ex:
+            raise ex
+            return False
+
+    def transaction_receive_callback(self, data: dict):
+        print("received transaction")
+        try:
+            received_transaction = Transaction.from_json(json_string=data['transaction'])
+            if not self.validate_transaction(received_transaction):
+                print("transaction failed due to validation error")
+                return False
+            print(self.database.get_transaction(received_transaction.id))
+            if None in self.database.get_transaction(received_transaction.id):
+                print("transaction failed due to database error")
+                return False
+            self.mining.add_transaction_to_transaction_pool(received_transaction)
+            
+        except Exception as ex:
+            raise ex
+            return
+
+    def validate_transaction(self, transaction: Transaction):
+        sender_details = self.database.get_user(transaction.sender)
+        if not transaction.validate(sender_details[2]):
+            return False
+        # if not database.validate_transaction_contents():
+        #    return False
+        return True
+    def validate_block(self, block: Block):
+        latest_block = self.database.get_latest_block_id()
+        if block.block_id != latest_block + 1:
+            return False
+
+        if not block.validate_block_signature():
+            return False
+
+        for transaction in block.transactions:
+            self.validate_transaction(transaction)
+        return True
+
     def miner_thread(self):
         if not self.is_miner:
             return
@@ -144,4 +201,3 @@ class interface:
 
 def generate_broadcast_id():
     return f'{random.randint(1000, 9999)}'
-

@@ -8,3 +8,4 @@ class Operations(Enum):
     FAILURE = 5
     ACCOUNT_CREATION = 6
     MINER_STATUS = 7
+    TRANSACTION_CREATION = 8

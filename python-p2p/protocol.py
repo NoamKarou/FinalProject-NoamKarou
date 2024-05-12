@@ -44,7 +44,6 @@ def protocol_read(socket_: socket.socket) -> (Operations, dict[str, str]):
     :return: (operation, content)
     '''
     data = socket_.recv(4).decode()
-    print(f'eeeeee: {data}')
     content_length = base64_to_int(data)
     operation = int(socket_.recv(4).decode())
     operation = Operations(operation)

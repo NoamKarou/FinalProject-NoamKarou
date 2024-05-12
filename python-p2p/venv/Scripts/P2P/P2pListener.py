@@ -73,8 +73,8 @@ class P2pListener:
     def listen_to_node(self, node: P2pNode.P2pNode):
         print(f"{self.my_id}: listening...")
         while True:
-            with self.mutex:
-                operation, content = protocol_read(node.socket)
+            #with self.mutex:
+            operation, content = protocol_read(node.socket)
             print(f"{self.my_id}: got a broadcast!")
             match operation:
                 case Operations.BROADCASTING:
@@ -170,7 +170,7 @@ class P2pListener:
         :return:
         '''
         try:
-            print(self.connected_nodes.values())
+            print(f'connected nodes: {self.connected_nodes.values()}')
             dict_to_broadcast['__sender'] = self.my_id
             for node in self.connected_nodes.values():
                 protocol_write(node.socket, dict_to_broadcast, Operations.BROADCASTING)
@@ -180,9 +180,12 @@ class P2pListener:
             raise ex
             return False
 
-    def broadcasting_callback(self, broadcasting_dict):
-        print("I HATE NIGGERS")
+    def broadcasting_callback(self, broadcasting_dict: dict):
         try:
+            print('========broadcast========')
+            for key in broadcasting_dict.keys():
+                print(f'{key}: {broadcasting_dict[key]}')
+            print('=======end-broadcast========')
 
             broadcast_id = broadcasting_dict['id']
             if broadcast_id in self.broadcasts.keys():

@@ -5,7 +5,8 @@ from PIL import Image
 from Scripts.UserInterface.Components import (
     UserAuthenticationField, UserCreation, ConnectToServer,
     MainMenu, UserDisplayWidget, LoginMenu, AccountCreation,
-    MinerCheckbox, IDLabel, Logo, TransactionCreator)
+    MinerCheckbox, IDLabel, Logo, TransactionCreator, Inbox,
+    CallbackDisplay)
 
 import tkinter as tk
 
@@ -65,7 +66,7 @@ class Ui:
         authentication.account_creation_callback = self.create_account'''
 
 
- 
+
     def create_account(self, username: ttk.Entry, password):
         print(username.get())
         print(password.get())
@@ -106,9 +107,42 @@ class Ui:
         self.logo = Logo.Logo(self.main_menu.sidebar)
         self.logo.frame.pack(side=ctk.TOP, pady=16)
 
-        self.transaction_creator = TransactionCreator.TransactionCreator(self.main_menu.notebook.tab(self.main_menu.titles['transfer']), self.interface.database.get_users)
+        #notebook setup
+
+        self.transaction_creator = TransactionCreator.TransactionCreator(
+            self.main_menu.notebook.tab(self.main_menu.titles['transfer']
+                                        ), self.interface.database.get_users, self.transaction_creation_callback)
         self.transaction_creator.master.pack(anchor="nw")
+
+
+
+        self.inbox = Inbox.Inbox(self.main_menu.notebook.tab(self.main_menu.titles['inbox']))
+        self.inbox.pack(anchor="nw", fill=tk.BOTH, expand=True)
+
         self.main_menu.set_login_status(self.interface.is_logged_in())
+
+
+    def transaction_creation_callback(self):
+        name, amount = self.transaction_creator.get_transaction_details()
+        if name == self.interface.username:
+            self.transaction_creator.set_error_text("you can't transfer funds\nto yourself!")
+            return
+        try:
+            temp = int(amount)
+        except:
+            self.transaction_creator.set_error_text("amount must be a positive integer!")
+            return
+
+        if int(amount) < 1 or int(amount) != float(amount):
+            self.transaction_creator.set_error_text("amount must be a positive integer!")
+            return
+
+        print(f'{name} {amount}')
+        if name == '' or amount == '':
+            print('canceled')
+            return
+        self.interface.create_transaction(name, amount)
+        self.transaction_creator.set_error_text("")
 
 
 
@@ -123,7 +157,7 @@ class Ui:
 
 
     def get_id(self):
-        return f'Id: hjfvdlhjdfgj'
+        return self.interface.listener.my_id
 
     def on_successful_account_creation(self, username):
         self.load_main_menu()
@@ -148,8 +182,11 @@ class Ui:
         self.interface.encryption_key = encryption_key
         self.interface.update_miner_status(True)
         #self.miner_checkbox.update_state()
-        print(username)
-        print(encryption_key)
+
+        self.miner_callback_display = CallbackDisplay.CallbackDisplay(self.main_menu.notebook.tab(self.main_menu.titles['history']),
+                                                                      self.interface.mining.update_callback)
+        self.miner_callback_display.pack(anchor="nw", fill=tk.BOTH, expand=True)
+
 
     def load_main_menu(self):
         self.hide_all_children()

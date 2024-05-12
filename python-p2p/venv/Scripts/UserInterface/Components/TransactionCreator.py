@@ -3,13 +3,14 @@ import time
 import threading
 import customtkinter
 class TransactionCreator:
-    def __init__(self, master, people_callback):
+    def __init__(self, master, people_callback, button_callback):
         self.master = customtkinter.CTkFrame(master)
         self.transactions = people_callback()
         self.filtered_transactions = self.transactions.copy()
         self.selected_transaction = customtkinter.StringVar()
 
         self.people_callback = people_callback
+        self.button_callback = button_callback
 
         self.setup_ui()
         self.update_people_list()
@@ -34,8 +35,11 @@ class TransactionCreator:
         self.amount_entry.pack()
 
         # Create a "Send" button
-        self.send_button = customtkinter.CTkButton(self.master, text="Send ✈️", command=self.send_transaction)
+        self.send_button = customtkinter.CTkButton(self.master, text="Send ✈️", command=lambda : self.button_callback())
         self.send_button.pack(pady=10)
+
+        self.error_label = customtkinter.CTkLabel(self.master, text="", text_color='red')
+        self.error_label.pack()
 
     def filter_transactions(self, *args):
         search_term = self.search_bar.get().lower()
@@ -45,6 +49,9 @@ class TransactionCreator:
                 self.filtered_transactions.append(transaction)
         self.display_transactions()
 
+    def set_error_text(self, error):
+        self.error_label.configure(text=error)
+
     def display_transactions(self):
         for widget in self.transaction_frame.winfo_children():
             widget.destroy()
@@ -53,13 +60,13 @@ class TransactionCreator:
             radio_button.pack(padx=10, pady=5, anchor="w")
 
     def update_search_bar(self):
+        print("wjaaaa")
         self.search_bar.delete(0, customtkinter.END)
         self.search_bar.insert(0, self.selected_transaction.get())
 
     def send_transaction(self):
         amount = self.amount_entry.get()
         selected_transaction = self.selected_transaction.get()
-        # Perform action with the selected transaction and amount, e.g., sending transaction
 
     def update_users(self, new_users):
         self.transactions = new_users
@@ -77,6 +84,11 @@ class TransactionCreator:
     def get_people_list(self):
         return self.people_callback()
 
+    def get_transaction_details(self):
+        amount = self.amount_entry.get()
+        selected_transaction = self.selected_transaction.get()
+        return selected_transaction, amount
+
 def get_transactions():
     return random.choice([['noam', 'oren'], ['noam', 'oren', 'itamar']])
 
@@ -91,7 +103,7 @@ if __name__ == "__main__":
     transactions_list = []
 
     # Initialize the TransactionCreator with the app as the master and the transactions list
-    transaction_creator = TransactionCreator(app, get_transactions)
+    transaction_creator = TransactionCreator(app, get_transactions, lambda :print(":)"))
 
     transaction_creator.update_users(["Dot.dotams", "Dog Gale.doggale", "Down.downfr97", "lozardo.lozardo", "otrfrsnk.otrfrenk"])
     transaction_creator.master.pack()

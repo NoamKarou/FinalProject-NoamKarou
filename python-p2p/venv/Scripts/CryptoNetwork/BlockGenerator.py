@@ -58,7 +58,9 @@ class Block:
         ret = ''
         ret += f'=====Begin block info for block: {self.block_id}==============\n'
         ret += f'miner: {self.miner}-received {(len(self.transactions)+1) * miner_money_multiplier} for creating the block\n'
-        for transaction in self.transactions:
+        copied_transactions = self.transactions
+        copied_transactions = sorted(copied_transactions, key=lambda transaction: transaction.amount)
+        for transaction in copied_transactions:
             ret += f'transaction: {transaction.generate_transaction_text()} : {transaction.signature}\n'
         ret += f'the salt of the block is: {self.salt}\n'
         ret += f'{self.hash_block()}\n'
@@ -80,6 +82,17 @@ def compare_bits_to_zero(bit_arr):
 if __name__ == '__main__':
     pub, priv = generate_key_pair()
     block = Block(miner="noam" ,last_block=0)
+    transactions = list()
+
+    transactions.append(Transaction("noam", "itamar", 200, key=priv))
+    transactions.append(Transaction("moti", "tsvika", 300, key=priv))
+    transactions.append(Transaction("alphasa", "alphasa", 700, key=priv))
+
+    block.transactions = transactions
+
+    print(block)
+
+    block = Block(miner="noam", last_block=0)
     transactions = list()
 
     transactions.append(Transaction("noam", "itamar", 200, key=priv))

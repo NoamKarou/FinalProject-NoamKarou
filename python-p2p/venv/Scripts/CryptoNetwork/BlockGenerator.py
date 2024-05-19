@@ -1,9 +1,11 @@
 import hashlib
+import json
+
 from Scripts.CryptoNetwork.Transaction import Transaction
 from Scripts.CryptoNetwork.UserGenerator import generate_key_pair
 import math
 
-z_count = 4
+z_count = 16
 miner_money_multiplier = 20
 
 class Block:
@@ -39,6 +41,7 @@ class Block:
     def hash_block(self):
         to_hash = ''
         to_hash += f'{self.block_id}{self.last_block_hash}'
+        to_hash += f'{self.miner}'
         for transaction in self.transactions:
             to_hash += transaction.generate_transaction_text()
         to_hash += f'{self.salt}'
@@ -53,7 +56,35 @@ class Block:
 
         return True
 
-    
+    def to_dict(self):
+        return_dict = {
+            'block_id': self.block_id,
+            'miner': self.miner,
+            'last_block': self.last_block_hash,
+            'salt': self.salt
+        }
+        transactions_list = []
+        for transaction in self.transactions:
+            transactions_list.append(transaction.to_json())
+        return_dict['transactions'] = transactions_list
+        return return_dict
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string):
+        user_dict = json.loads(json_string)
+        return_block = cls(
+            user_dict['miner'],
+            user_dict['last_block'])
+        return_block.block_id = user_dict['block_id']
+
+        for transaction in user_dict['transactions']:
+            return_block.transactions.append(Transaction.from_json(transaction))
+        return_block.salt = user_dict['salt']
+        return return_block
+
     def __str__(self):
         ret = ''
         ret += f'=====Begin block info for block: {self.block_id}==============\n'
@@ -74,7 +105,7 @@ def hash_string_sha256(input_string):
     hashed_string = sha256_hash.hexdigest()
 
     return hashed_string
-
+38810
 
 def compare_bits_to_zero(bit_arr):
     return bit_arr == ''.zfill(len(bit_arr))
@@ -90,7 +121,7 @@ if __name__ == '__main__':
 
     block.transactions = transactions
 
-    print(block)
+    #print(block)
 
     block = Block(miner="noam", last_block=0)
     transactions = list()
@@ -101,4 +132,20 @@ if __name__ == '__main__':
 
     block.transactions = transactions
 
-    print(block)
+    print(block.hash_block())
+
+    copy_block = block.from_json(block.to_json())
+
+    print(copy_block.hash_block())
+
+    copy_block = block.from_json(block.to_json())
+
+    print(copy_block.hash_block())
+
+    copy_block = block.from_json(block.to_json())
+
+    print(copy_block.hash_block())
+
+    copy_block = block.from_json(block.to_json())
+
+    print(copy_block.hash_block())

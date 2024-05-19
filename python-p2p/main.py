@@ -1,10 +1,19 @@
-class test:
-    def __init__(self, a):
-        self.a = a
+import multiprocessing
 
+class MyClass:
+    def __init__(self):
+        self.num_cores = multiprocessing.cpu_count()
 
-test_objects = list()
-for i in range(10):
-    test_objects.append(test(i))
+    def mining_thread(self):
+        print("Processing")
 
-print([a.a for a in test_objects])
+    def run(self, funtion):
+        pool = multiprocessing.Pool(processes=self.num_cores)
+        for _ in range(self.num_cores):  # Launch one process per core
+            pool.apply_async(funtion)
+        pool.close()
+        pool.join()
+
+if __name__ == '__main__':
+    my_instance = MyClass()
+    my_instance.run(my_instance.mining_thread)

@@ -274,11 +274,19 @@ class PeerToPeerDatabase:
             miner = cursor.fetchone()[0]
 
             #print(transactions)
+
             for transaction in transactions:
                 user_balance[transaction[2]] = user_balance.get(transaction[2], 0) - transaction[4]
                 user_balance[transaction[3]] = user_balance.get(transaction[3], 0) + transaction[4]
-                user_balance[miner] = user_balance.get(miner, 0) + miner_money_multiplier
+            miner_bonus = miner_money_multiplier * (len(transactions) + 1)
 
+            user_balance[miner] = user_balance.get(miner, 0) + miner_bonus
+            print('==============')
+            print(user_balance.get(miner, 0))
+            print(miner_bonus)
+            print(sum(user_balance.values()))
+            print(len(transactions))
+            print('=================')
         conn.close()
         return user_balance
 
@@ -298,7 +306,9 @@ if __name__ == '__main__':
     block = generate_random_block(last_block=2)
     database.add_block(block)
 
-    print(database.sum_blockchain())
+    blocksum = database.sum_blockchain()
+    print(blocksum)
+
 
     print(database.get_users())
     print(database.get_latest_block_id())

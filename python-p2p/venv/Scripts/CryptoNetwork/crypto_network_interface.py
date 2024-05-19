@@ -11,12 +11,12 @@ from Scripts.CryptoNetwork.Transaction import Transaction
 from Scripts.CryptoNetwork.BlockGenerator import Block
 from Scripts.CryptoNetwork import UserGenerator
 from Scripts.CryptoNetwork.Mining import Mining
+from Scripts.CryptoNetwork.UserGenerator import decrypt_message, encrypt_message
 
 from operations import Operations
 
 from Scripts.Database import database
 
-from Scripts.CryptoNetwork.UserGenerator import decrypt_message, encrypt_message
 
 class interface:
     listener: P2pListener
@@ -99,6 +99,8 @@ class interface:
                 return self.miner_update_callback(data['username'], data['signature'], data["status"])
             case Operations.TRANSACTION_CREATION.value:
                 return self.transaction_receive_callback(data)
+            case Operations.BLOCK_CREATION.value:
+                return self.block_receive_callback(data)
             case _:
                 print(data)
                 pass
@@ -119,7 +121,7 @@ class interface:
         """
         self.is_miner = status
         if status:
-            self.mining = Mining(self.username, self.database)
+            self.mining = Mining(self.username, self.database, self.create_block)
             #self.active_miner_thread = threading.Thread(target=self.miner_thread)
             #self.active_miner_thread.start()
 
@@ -136,6 +138,49 @@ class interface:
 
     #def generate_id(self):
         #self.listener.
+
+    def create_block(self, block: Block):
+        '''
+        a callback that is sent to the mining srcipt
+        is used whenever a new block is mined
+        '''
+        broadcasting_dict = {
+            "id": generate_broadcast_id(),
+            "operation": Operations.BLOCK_CREATION.value,
+            "block": block.to_json()
+        }
+        self.listener.broadcast_to_all(broadcasting_dict)
+        self.block_receive_callback(broadcasting_dict)
+        self.mining.on_block_added_outside()
+
+    def block_receive_callback(self, data):
+        print("received block")
+        try:
+            received_block = Block.from_json(json_string=data['block'])
+            print(received_block)
+            last_id = self.database.get_latest_block_id()
+            if last_id is None:
+                last_id = -1
+            print(1)
+            if received_block.block_id != int(last_id) + 1:
+                print('the block is not the latest in the chain')
+                return False
+            print(2)
+            for received_transaction in received_block.transactions:
+                if not self.validate_transaction(received_transaction):
+                    print("block addition failed due to transaction validation error")
+                    return False
+                print(2.5)
+                if None in self.database.get_transaction(received_transaction.id):
+                    print("transaction failed due to database error")
+                    return False
+                print(3)
+            self.database.add_block(received_block)
+
+        except Exception as ex:
+            raise ex
+            return
+
 
     def create_transaction(self, recevier: str, amount: int):
         try:

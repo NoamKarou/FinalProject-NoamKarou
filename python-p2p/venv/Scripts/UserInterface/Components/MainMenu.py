@@ -38,7 +38,7 @@ class MainMenu:
             'history': " transaction \nhistory ",
             'network': " network \n mapper ",
             'connections': " current \n connections ",
-            'inbox': "  incoming  \n  mail",
+            'inbox': "  notification  \n  inbox",
         }
 
         for option in self.titles.values():

@@ -9,3 +9,4 @@ class Operations(Enum):
     ACCOUNT_CREATION = 6
     MINER_STATUS = 7
     TRANSACTION_CREATION = 8
+    BLOCK_CREATION = 9

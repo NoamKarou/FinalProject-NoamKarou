@@ -62,39 +62,11 @@ class Mining:
 
 
 
-    #def create_salt(self, zcount = 5, max_itter = 1000000, start_index=0):
-    #    '''
-    #
-    #    :param zcount: the desired amount of zeros
-    #    :param max_itter: the max itterations for finding the value (0=∞)
-    #    :return: True if the salt has been created, False if it haden't
-    #    '''
-    #    try:
-    #        self.miner_thread = threading.Thread(target=self._salt_generator, args=(zcount, max_itter, start_index))
-    #        self.salt_function_temp = False
-    #        self.miner_thread.daemon = True
-    #        self.miner_thread.start()
-    #        self.miner_thread.join()
-    #        temp = self.salt_function_temp
-    #        self.salt_function_temp = None
-    #        return temp
-    #    except:
-    #        return None
-
     def mining_thread(self):
         salt_start_point = 0
         jump_size = 1000
         while True:
             if self.active_block is not None:
-
-                #num_cores = multiprocessing.cpu_count()
-                #pool = multiprocessing.Pool(processes=num_cores)
-                #pool.map(self._salt_generator,
-                #         (z_count,
-                #          jump_size,
-                #          salt_start_point))
-                #pool.close()
-                #pool.join()
                 salt_calculator = threading.Thread(target=self._salt_generator, args=(z_count, jump_size, salt_start_point))
                 salt_calculator.start()
                 salt_calculator.join()
@@ -102,6 +74,7 @@ class Mining:
                 salt = self.salt
                 if salt is not None:
                     self.block_publishing_callback(self.active_block)
+                    self.active_block = None
                     salt_start_point = 0
                 salt_start_point += jump_size
                 time.sleep(0.1)
@@ -113,13 +86,13 @@ class Mining:
         #with self.active_block_mutex:
         new_block = Block(self.name, last_block.block_id)
         self.active_block = new_block
+        print('ffffffffffffffffffffffffffffffffffffff')
+        print(last_block)
         for transaction in self.transaction_pool:
-            if transaction in last_block.transactions:
+            if last_block.check_for_transaction_in_block(transaction):
+                print("removing transaction =============")
                 self.transaction_pool.remove(transaction)
-        try:
-            self.create_salt()
-        except:
-            return
+            new_block.transactions = self.transaction_pool
 
     def _salt_generator(self, zcount = 5, max_itter = 10000, start_index=0):
         #with self.active_block_mutex:
@@ -149,20 +122,25 @@ class Mining:
 #
     def add_transaction_to_transaction_pool(self, transaction: Transaction):
         self.transaction_pool.append(transaction)
+        block = self.database.get_block(
+                int(self.database.get_latest_block_id()))
+        print(block)
         if self.active_block is None:
-            self.start_new_block(self.database.get_block(
-                self.database.get_latest_block_id())
-            )
+            self.start_new_block(block)
+        try:
+            self.active_block.transactions = self.transaction_pool
+        except:
+            None
 
-    def on_block_added_outside(self):
+    def on_block_added_outside(self, previous_block):
         self.transaction_pool = self.database.check_for_transactions_in_database(self.transaction_pool)
         if self.mining_thread != None:
             self.miner_thread_kill = True
         print(f'transactions: {self.transaction_pool}')
         if len(self.transaction_pool) > 0:
-            previous_block = self.database.get_block(self.database.get_latest_block_id())
+            print('ggggggggggggggg')
+            print(previous_block.transactions)
             self.start_new_block(previous_block)
-            self.create_salt()
         else:
             self.active_block = None
 
@@ -174,8 +152,9 @@ class Mining:
             final_str += 'no block is being mined at the moment\n======================\n'
         if len(self.transaction_pool) == 0:
             final_str += "there are no active transactions at the moment\n======================\n"
+        final_str += "transaction pool:\n======================\n"
         for transaction in self.transaction_pool:
-            final_str += transaction.generate_transaction_text()
+            final_str += transaction.generate_transaction_text() + '\n'
         final_str += '\n=========\n'
         final_str +=  f'{time.strftime("%H:%M:%S")}'
         return final_str

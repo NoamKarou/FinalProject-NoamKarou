@@ -48,7 +48,7 @@ class Ui:
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
-        target_width = int(3 / 7 * screen_width)
+        target_width = int(1.5 / 7 * screen_width)
         target_height = int(3 / 7 * screen_height)
 
         self.root.geometry(f"{target_width}x{target_height}")

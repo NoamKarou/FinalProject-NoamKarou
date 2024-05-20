@@ -38,6 +38,7 @@ class interface:
         if start_ip is not None:
             self.listener.connect((start_ip, target_port))
 
+        self.mining = None
 
         #self.listener.thread_handle.join()
 
@@ -151,7 +152,6 @@ class interface:
         }
         self.listener.broadcast_to_all(broadcasting_dict)
         self.block_receive_callback(broadcasting_dict)
-        self.mining.on_block_added_outside()
 
     def block_receive_callback(self, data):
         print("received block")
@@ -171,11 +171,20 @@ class interface:
                     print("block addition failed due to transaction validation error")
                     return False
                 print(2.5)
-                if None in self.database.get_transaction(received_transaction.id):
-                    print("transaction failed due to database error")
+                print(f'block transaction id: {received_transaction.id}')
+                transaction_info = self.database.get_transaction(received_transaction.id)
+                print(f'block transaction info: {transaction_info}')
+                if len(transaction_info) != 0:
+                    print("transaction failed due to being a duplicate")
                     return False
                 print(3)
+
+            print(received_block.transactions)
+            if len(received_block.transactions) == 0 and received_block.block_id != 0:
+                return False
             self.database.add_block(received_block)
+            if self.mining is not None:
+                self.mining.on_block_added_outside(received_block)
 
         except Exception as ex:
             raise ex
@@ -191,7 +200,7 @@ class interface:
                 "transaction": transaction.to_json()
             }
             self.listener.broadcast_to_all(broadcasting_dict)
-            self.mining.add_transaction_to_transaction_pool(transaction)
+            self.transaction_receive_callback(broadcasting_dict)
             return True
         except Exception as ex:
             raise ex

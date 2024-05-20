@@ -1,5 +1,6 @@
 import hashlib
 import json
+import time
 
 from Scripts.CryptoNetwork.Transaction import Transaction
 from Scripts.CryptoNetwork.UserGenerator import generate_key_pair
@@ -55,6 +56,13 @@ class Block:
             return False
 
         return True
+
+    def check_for_transaction_in_block(self, transaction: Transaction):
+        transaction_text = transaction.generate_transaction_text()
+        for block_transaction in self.transactions:
+            if transaction_text == block_transaction.generate_transaction_text():
+                return True
+        return False
 
     def to_dict(self):
         return_dict = {
@@ -132,20 +140,6 @@ if __name__ == '__main__':
 
     block.transactions = transactions
 
-    print(block.hash_block())
-
-    copy_block = block.from_json(block.to_json())
-
-    print(copy_block.hash_block())
-
-    copy_block = block.from_json(block.to_json())
-
-    print(copy_block.hash_block())
-
-    copy_block = block.from_json(block.to_json())
-
-    print(copy_block.hash_block())
-
-    copy_block = block.from_json(block.to_json())
-
-    print(copy_block.hash_block())
+    print(block.check_for_transaction_in_block(block.transactions[0]))
+    time.sleep(0.1)
+    print(block.check_for_transaction_in_block(Transaction("alphasa", "alphasa", 700, key=priv)))

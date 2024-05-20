@@ -9,7 +9,6 @@ from Scripts.CryptoNetwork.Transaction import Transaction
 class PeerToPeerDatabase:
     def __init__(self, port, db_folder='  '):
         self.port = port
-        #{db_folder}/
         module_dir = os.path.dirname(os.path.abspath(__file__))
         self.db_file = module_dir + f'/databases/databases_{port}/user_database.db'
 
@@ -37,6 +36,8 @@ class PeerToPeerDatabase:
                         sender_id INTEGER,
                         receiver_id INTEGER,
                         amount REAL,
+                        timestamp TIME,
+                        signature TEXT,
                         FOREIGN KEY (sender_id) REFERENCES users(user_id),
                         FOREIGN KEY (receiver_id) REFERENCES users(user_id),
                         FOREIGN KEY (block_id) REFERENCES blocks(block_id)
@@ -114,6 +115,8 @@ class PeerToPeerDatabase:
         sender_id = transaction.sender
         receiver_id = transaction.receiver
         amount = transaction.amount
+        timestamp = transaction.timestamp
+        signature = transaction.signature
 
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
@@ -121,9 +124,9 @@ class PeerToPeerDatabase:
         try:
             # Insert transaction into the transactions table
             cursor.execute('''
-                INSERT INTO transactions (tx_id, block_id, sender_id, receiver_id, amount)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (transaction_id, block_id, sender_id, receiver_id, amount))
+                INSERT INTO transactions (tx_id, block_id, sender_id, receiver_id, amount, timestamp, signature)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (transaction_id, block_id, sender_id, receiver_id, amount, timestamp, signature))
 
             conn.commit()
             #print("Transaction added successfully.")
@@ -139,14 +142,13 @@ class PeerToPeerDatabase:
             cursor = conn.cursor()
 
             cursor.execute('''
-                SELECT tx_id, block_id, sender_id, receiver_id, amount
+                SELECT tx_id, block_id, sender_id, receiver_id, amount, timestamp, signature
                 FROM transactions
                 WHERE tx_id = ?
             ''', (transaction_id,))
 
             transactions = cursor.fetchall()
             conn.close()
-
             return transactions
         except:
             return [None]
@@ -202,10 +204,33 @@ class PeerToPeerDatabase:
             WHERE block_id = ?
         ''', (block_id,))
 
-        transactions = cursor.fetchall()
+        block_details = cursor.fetchall()[0]
+
+        cursor.execute('''
+                    SELECT tx_id, block_id, sender_id, receiver_id, amount, timestamp, signature
+                    FROM transactions
+                    WHERE block_id = ?
+                ''', (block_id,))
+
+        transactions_db_format = cursor.fetchall()
+        transaction_objects = []
+        for transaction in transactions_db_format:
+            new_transaction = Transaction(transaction[2],
+                                          transaction[3],
+                                          transaction[4],
+                                          transaction[6],
+                                          None,
+                                          transaction[0],
+                                          transaction[5])
+
+
         conn.close()
 
-        return transactions
+
+        block_object = Block(block_details[3], block_details[1])
+        block_object.last_block_hash = block_details[2]
+        block_object.block_id = block_details[0]
+        return block_object
 
 
     def get_users(self):
@@ -236,6 +261,19 @@ class PeerToPeerDatabase:
             return None
 
     def check_for_transactions_in_database(self, transactions: list[Transaction]):
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        for transaction in transactions:
+            try:
+                cursor.execute("SELECT 1 FROM transactions_table WHERE id = ?", (transaction.id,))
+                cursor.fetchone()
+                transactions.remove(transaction)
+            except:
+                None
+        conn.close()
+        return transactions
+
+    def check_for_transaction_in_database(self, transactions: list[Transaction]):
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
         for transaction in transactions:

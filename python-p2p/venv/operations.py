@@ -10,3 +10,4 @@ class Operations(Enum):
     MINER_STATUS = 7
     TRANSACTION_CREATION = 8
     BLOCK_CREATION = 9
+    REQUEST_DB = 10

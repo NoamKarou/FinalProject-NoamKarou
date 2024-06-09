@@ -13,6 +13,7 @@ class Block:
 
 
     '''
+    The python object for a flock
     ======BLOCK RULES=======
     the first block to come wins
     if two blocks come at the same time the one with more transactions wins
@@ -28,6 +29,10 @@ class Block:
     salt: str
 
     def __init__(self, miner, last_block=None):
+        '''
+        :param miner: the miner of the current block
+        :param last_block: the id of the last block
+        '''
         if last_block is None:
             self.last_block_hash = 0
             self.block_id = 1
@@ -40,6 +45,9 @@ class Block:
         self.transactions = list()
 
     def hash_block(self):
+        '''
+        :return: the block summed and hashed
+        '''
         to_hash = ''
         to_hash += f'{self.block_id}{self.last_block_hash}'
         to_hash += f'{self.miner}'
@@ -49,6 +57,10 @@ class Block:
         return hash_string_sha256(to_hash)
 
     def validate_block_signature(self):
+        '''
+        hashes the block and returns true if the signature is correct
+        :return: bool
+        '''
         block_hash = self.hash_block()
         digest_bytes = bytes.fromhex(block_hash[0: math.ceil(z_count / 8) * 2])
         hash_bits = ''.join(format(byte, '08b') for byte in digest_bytes)
@@ -58,6 +70,11 @@ class Block:
         return True
 
     def check_for_transaction_in_block(self, transaction: Transaction):
+        '''
+        Check if a given transaction is present in the current block.
+        :param transaction: a transaction object
+        :return:
+        '''
         transaction_text = transaction.generate_transaction_text()
         for block_transaction in self.transactions:
             if transaction_text == block_transaction.generate_transaction_text():
@@ -65,6 +82,10 @@ class Block:
         return False
 
     def to_dict(self):
+        '''
+        Convert the block to a dictionary representation.
+        :return: dictinary
+        '''
         return_dict = {
             'block_id': self.block_id,
             'miner': self.miner,
@@ -78,10 +99,20 @@ class Block:
         return return_dict
 
     def to_json(self):
+        '''
+        Convert the block to a JSON string representation.
+        :return: str: A JSON string representation of the block.
+        '''
         return json.dumps(self.to_dict())
 
     @classmethod
     def from_json(cls, json_string):
+        '''
+        parses a JSON string to create a block instance, including its
+        transactions.
+        :param json_string:
+        :return: An instance of the block class
+        '''
         user_dict = json.loads(json_string)
         return_block = cls(
             user_dict['miner'],
@@ -107,15 +138,24 @@ class Block:
         return ret
 
 def hash_string_sha256(input_string):
+    '''
+    Generate a SHA-256 hash for a given input string.
+    :param input_string: The input string to be hashed
+    :return: he hexadecimal representation of the SHA-256 hash of the input string.
+    '''
     encoded_string = input_string.encode('utf-8')
     sha256_hash = hashlib.sha256()
     sha256_hash.update(encoded_string)
     hashed_string = sha256_hash.hexdigest()
 
     return hashed_string
-38810
 
 def compare_bits_to_zero(bit_arr):
+    '''
+    Compare a bit array to zero. used to validate the signature
+    :param bit_arr:
+    :return: True if the bit array is all zeros, False otherwise.
+    '''
     return bit_arr == ''.zfill(len(bit_arr))
 
 if __name__ == '__main__':

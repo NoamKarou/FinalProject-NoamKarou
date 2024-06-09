@@ -122,12 +122,13 @@ class User:
 def check_login(public_key: str, private_key: str, password: str):
     try:
         TEST_MESSAGE = "Hello. This Is a test"
-
+        #create a test message
         encryption_key = decrypt_message_aes(private_key, password)
-
+        #encrypt it using the private key
         encrypted_message = encrypt_message(TEST_MESSAGE, encryption_key)
-
+        #decrypt it using the public key
         if decrypt_message(encrypted_message, public_key) == TEST_MESSAGE:
+            #check if the result matches
             return encryption_key
         return False
     except:

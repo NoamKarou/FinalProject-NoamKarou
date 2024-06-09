@@ -1,19 +1,24 @@
-import multiprocessing
+import threading
 
-class MyClass:
-    def __init__(self):
-        self.num_cores = multiprocessing.cpu_count()
+# Create a mutex object
+mutex = threading.RLock()
 
-    def mining_thread(self):
-        print("Processing")
+def a():
+    # Acquire the lock
+    with mutex:
+        # Critical section
+        print("Function a is running")
+        # Perform necessary operations
+        # Release the lock automatically at the end of the with statement
 
-    def run(self, funtion):
-        pool = multiprocessing.Pool(processes=self.num_cores)
-        for _ in range(self.num_cores):  # Launch one process per core
-            pool.apply_async(funtion)
-        pool.close()
-        pool.join()
+def b():
+    # Acquire the lock
+    with mutex:
+        # Call function a within the critical section
+        a()
+        # Critical section for b
+        print("Function b is running")
+        # Release the lock automatically at the end of the with statement
 
-if __name__ == '__main__':
-    my_instance = MyClass()
-    my_instance.run(my_instance.mining_thread)
+# Test the functions
+b()

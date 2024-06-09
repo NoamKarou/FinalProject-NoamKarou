@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import ctypes
 from PIL import Image
 
@@ -42,6 +43,7 @@ class Ui:
     def ui_loop(self):
         self.root = ctk.CTk()
         ctk.set_default_color_theme(r'CtkThemes/red.json')
+        self.root.iconbitmap(r'Components/image_assets/logo/logo.ico')
         self.root.title("Noam")
         self.tk_username = tk.StringVar()
 
@@ -111,16 +113,20 @@ class Ui:
 
         self.transaction_creator = TransactionCreator.TransactionCreator(
             self.main_menu.notebook.tab(self.main_menu.titles['transfer']
-                                        ), self.interface.database.get_users, self.transaction_creation_callback)
-        self.transaction_creator.master.pack(anchor="nw")
-
-
+                                        ), self.interface.database.get_users, self.transaction_creation_callback, self.user_details_text)
+        self.transaction_creator.master.pack(anchor="nw", side=tk.LEFT)
 
         self.inbox = Inbox.Inbox(self.main_menu.notebook.tab(self.main_menu.titles['inbox']))
         self.inbox.pack(anchor="nw", fill=tk.BOTH, expand=True)
 
         self.main_menu.set_login_status(self.interface.is_logged_in())
 
+
+    def user_details_text(self):
+        ret_string = self.interface.get_username()
+        ret_string += f'\n{self.interface.database.get_user_balance(self.interface.get_username())}'
+        ret_string += f'\n{datetime.now()}'
+        return ret_string
 
     def transaction_creation_callback(self):
         name, amount = self.transaction_creator.get_transaction_details()
@@ -183,7 +189,7 @@ class Ui:
         self.interface.update_miner_status(True)
         #self.miner_checkbox.update_state()
 
-        self.miner_callback_display = CallbackDisplay.CallbackDisplay(self.main_menu.notebook.tab(self.main_menu.titles['history']),
+        self.miner_callback_display = CallbackDisplay.CallbackDisplay(self.main_menu.notebook.tab(self.main_menu.titles['mining']),
                                                                       self.interface.mining.update_callback)
         self.miner_callback_display.pack(anchor="nw", fill=tk.BOTH, expand=True)
 

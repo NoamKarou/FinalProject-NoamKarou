@@ -56,7 +56,7 @@ class Mining:
         if latest_block == None:
             latest_block = -1
         self.active_block = Block(self.name, latest_block)
-        #self.active_block_mutex = threading.Lock()
+        self.active_block_mutex = threading.RLock()
         self.mining_thread = threading.Thread(target=self.mining_thread)
         self.mining_thread.start()
 
@@ -66,13 +66,21 @@ class Mining:
         salt_start_point = 0
         jump_size = 1000
         while True:
+            self.miner_thread_kill = False
             if self.active_block is not None:
+                with self.active_block_mutex:
+                    self.transaction_pool = self.database.check_for_transactions_in_database(self.transaction_pool)
+                    self.active_block.transactions = self.transaction_pool
                 salt_calculator = threading.Thread(target=self._salt_generator, args=(z_count, jump_size, salt_start_point))
                 salt_calculator.start()
                 salt_calculator.join()
                 self._salt_generator(z_count, jump_size, salt_start_point)
                 salt = self.salt
-                if salt is not None:
+                if salt is not None or self.miner_thread_kill:
+                    self.miner_thread_kill = False
+                    if self.transaction_pool.__str__() != self.active_block.transactions.__str__():
+                        print("fail condition was called")
+                        continue
                     self.block_publishing_callback(self.active_block)
                     self.active_block = None
                     salt_start_point = 0
@@ -83,16 +91,19 @@ class Mining:
 
 
     def start_new_block(self, last_block: Block):
-        #with self.active_block_mutex:
-        new_block = Block(self.name, last_block.block_id)
-        self.active_block = new_block
-        print('ffffffffffffffffffffffffffffffffffffff')
-        print(last_block)
-        for transaction in self.transaction_pool:
-            if last_block.check_for_transaction_in_block(transaction):
-                print("removing transaction =============")
-                self.transaction_pool.remove(transaction)
-            new_block.transactions = self.transaction_pool
+        with self.active_block_mutex:
+            new_block = Block(self.name, last_block.block_id)
+            self.active_block = new_block
+            print('ffffffffffffffffffffffffffffffffffffff')
+            print(last_block)
+            for transaction in self.transaction_pool:
+                if last_block.check_for_transaction_in_block(transaction):
+                    print("removing transaction =============")
+                    self.transaction_pool.remove(transaction)
+                new_block.transactions = self.transaction_pool
+            if len(self.transaction_pool) == 0:
+                self.active_block = None
+
 
     def _salt_generator(self, zcount = 5, max_itter = 10000, start_index=0):
         #with self.active_block_mutex:
@@ -121,21 +132,21 @@ class Mining:
         return
 #
     def add_transaction_to_transaction_pool(self, transaction: Transaction):
-        self.transaction_pool.append(transaction)
-        block = self.database.get_block(
-                int(self.database.get_latest_block_id()))
-        print(block)
-        if self.active_block is None:
-            self.start_new_block(block)
-        try:
-            self.active_block.transactions = self.transaction_pool
-        except:
-            None
+        with self.active_block_mutex:
+            self.transaction_pool.append(transaction)
+            block = self.database.get_block(
+                    int(self.database.get_latest_block_id()))
+            print(block)
+            if self.active_block is None:
+                self.start_new_block(block)
+            try:
+                self.active_block.transactions = self.transaction_pool
+            except:
+                None
 
     def on_block_added_outside(self, previous_block):
         self.transaction_pool = self.database.check_for_transactions_in_database(self.transaction_pool)
-        if self.mining_thread != None:
-            self.miner_thread_kill = True
+        self.miner_thread_kill = True
         print(f'transactions: {self.transaction_pool}')
         if len(self.transaction_pool) > 0:
             print('ggggggggggggggg')

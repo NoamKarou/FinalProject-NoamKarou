@@ -38,6 +38,7 @@ class MainMenu:
             'history': " transaction \nhistory ",
             'network': " network \n mapper ",
             'connections': " current \n connections ",
+            'mining': " miner \n summary ",
             'inbox': "  notification  \n  inbox",
         }
 

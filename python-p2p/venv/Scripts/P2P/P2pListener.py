@@ -18,6 +18,8 @@ class P2pListener:
     thread_handle: threading.Thread
 
     broadcast_callback: callable
+    direct_operation_callback: callable
+    returning_operations_callback: callable
     connected_nodes: dict[str, P2pNode.P2pNode]
     mutex: threading.Lock
     def __init__(self, port_num):
@@ -73,12 +75,16 @@ class P2pListener:
     def listen_to_node(self, node: P2pNode.P2pNode):
         print(f"{self.my_id}: listening...")
         while True:
-            #with self.mutex:
             operation, content = protocol_read(node.socket)
             print(f"{self.my_id}: got a broadcast!")
             match operation:
                 case Operations.BROADCASTING:
                     self.broadcasting_callback(content)
+                case Operations.DIRECT:
+                    result = self.direct_callback(content)
+                    protocol_write(node.socket, result, Operations.DIRECT_RETURN)
+                case Operations.DIRECT_RETURN:
+                    self.direct_callback(content, returning=True)
 
     '''
     ===================================
@@ -180,6 +186,7 @@ class P2pListener:
             raise ex
             return False
 
+
     def broadcasting_callback(self, broadcasting_dict: dict):
         try:
             print('========broadcast========')
@@ -217,5 +224,40 @@ class P2pListener:
             raise ex
             return False
 
+    '''
+    =====================================================
+    ------------------direct messages--------------------
+    =====================================================
+    '''
+    def send_direct(self, direct_dict: dict):
+        try:
+            print('======returning operation proccesing')
+            node_id, target_node = next(iter(self.connected_nodes.items()))
+            print(f'connected nodes: {self.connected_nodes.values()}')
+            direct_dict['__sender'] = self.my_id
+            protocol_write(target_node.socket, direct_dict, Operations.DIRECT)
+            print('======sent returning operation')
 
+        except Exception as ex:
+            print(ex)
+            #raise ex
+            return False
+    def direct_callback(self, direct_dict: dict, returning=False):
+        print('entered direct callback')
+        try:
+            if not returning:
+                direct_operation = direct_dict['operation']
+                result = self.direct_operation_callback(direct_dict, direct_operation)
+                if result == False:
+                    print('canceling direct because it failed')
+                    return {'result': False, 'operation': Operations.REQUEST_DB_RETURN}
 
+                sender_id = direct_dict['__sender']
+                return result
+            else:
+                direct_operation = direct_dict['operation']
+                self.returning_operations_callback(direct_dict, direct_operation)
+
+        except Exception as ex:
+            raise ex
+            return False

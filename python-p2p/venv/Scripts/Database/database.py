@@ -38,8 +38,8 @@ class PeerToPeerDatabase:
                         amount REAL,
                         timestamp TIME,
                         signature TEXT,
-                        FOREIGN KEY (sender_id) REFERENCES users(user_id),
-                        FOREIGN KEY (receiver_id) REFERENCES users(user_id),
+                        FOREIGN KEY (sender_id) REFERENCES users(username),
+                        FOREIGN KEY (receiver_id) REFERENCES users(username),
                         FOREIGN KEY (block_id) REFERENCES blocks(block_id)
                     )
                 ''')
@@ -56,6 +56,17 @@ class PeerToPeerDatabase:
         conn.commit()
         conn.close()
 
+    def database_to_bytes(self):
+        database_handle = open(self.db_file, 'rb')
+        database_bytes = database_handle.read()
+        database_handle.close()
+        return database_bytes
+
+    def write_database(self, data: bytes):
+        database_handle = open(self.db_file, 'wb')
+        database_handle.write(data)
+        database_handle.close()
+        print('database transfered successfully')
 
     def user_exists(self, username):
         conn = sqlite3.connect(self.db_file)
@@ -265,10 +276,12 @@ class PeerToPeerDatabase:
         cursor = conn.cursor()
         for transaction in transactions:
             try:
-                cursor.execute("SELECT 1 FROM transactions_table WHERE id = ?", (transaction.id,))
-                cursor.fetchone()
-                transactions.remove(transaction)
-            except:
+                cursor.execute("SELECT 1 FROM transactions WHERE tx_id = ?", (transaction.id,))
+                result = cursor.fetchone()
+                if result is not None:
+                    transactions.remove(transaction)
+            except Exception as ex:
+                raise ex
                 None
         conn.close()
         return transactions
@@ -283,14 +296,38 @@ class PeerToPeerDatabase:
         conn.close()
         return transactions
 
-    def sum_blockchain(self, use_cache = True):
+    def generate_transactions_text(self):
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM transactions_table", ())
+        transactions_db_format = cursor.fetchall()
+        transaction_objects = []
+        for transaction in transactions_db_format:
+            new_transaction = Transaction(transaction[2],
+                                          transaction[3],
+                                          transaction[4],
+                                          transaction[6],
+                                          None,
+                                          transaction[0],
+                                          transaction[5])
+            transaction_objects.append(new_transaction)
 
+        conn.close()
+
+    def get_user_balance(self, user):
+        try:
+            return self.user_balance_cache[1][user]
+        except Exception as ex:
+            return '-'
+
+
+
+    def sum_blockchain(self, use_cache=True):
         if not use_cache:
             starting_block = 0
             user_balance = {}
         else:
             starting_block, user_balance = self.user_balance_cache
-
 
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
@@ -298,24 +335,24 @@ class PeerToPeerDatabase:
         cursor.execute('SELECT COUNT(*) FROM blocks;')
         block_count = cursor.fetchone()[0]
 
-
-
         for block in range(starting_block, block_count):
-            block += 1
-            #print(f'block: {block}')
+            # print(f'block: {block}')
             cursor.execute("SELECT * FROM transactions WHERE block_id = ?", (block,))
             transactions = cursor.fetchall()
 
-            print(block)
+            print(f'current caching block: {block}')
 
             cursor.execute("SELECT miner FROM blocks WHERE block_id = ?", (block,))
             miner = cursor.fetchone()[0]
 
-            #print(transactions)
+            # print(transactions)
 
             for transaction in transactions:
-                user_balance[transaction[2]] = user_balance.get(transaction[2], 0) - transaction[4]
-                user_balance[transaction[3]] = user_balance.get(transaction[3], 0) + transaction[4]
+                sender = str(transaction[2])
+                receiver = str(transaction[3])
+                amount = transaction[4]
+                user_balance[sender] = user_balance.get(sender, 0) - amount
+                user_balance[receiver] = user_balance.get(receiver, 0) + amount
             miner_bonus = miner_money_multiplier * (len(transactions) + 1)
 
             user_balance[miner] = user_balance.get(miner, 0) + miner_bonus
@@ -325,6 +362,8 @@ class PeerToPeerDatabase:
             print(sum(user_balance.values()))
             print(len(transactions))
             print('=================')
+
+        self.user_balance_cache = (block_count, user_balance)
         conn.close()
         return user_balance
 

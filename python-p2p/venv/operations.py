@@ -11,3 +11,6 @@ class Operations(Enum):
     TRANSACTION_CREATION = 8
     BLOCK_CREATION = 9
     REQUEST_DB = 10
+    DIRECT = 11
+    DIRECT_RETURN = 12
+    REQUEST_DB_RETURN = 13

@@ -58,7 +58,9 @@ def protocol_write(socket_: socket.socket, value: dict, operation: Operations) -
         json_string = json.dumps(value)
         content_len_num = len(json_string)
         content_len = int_to_base64(content_len_num)
-        socket_.sendall(f'{f'{content_len}'.zfill(4)}{f'{operation.value}'.zfill(4)}{json_string}'.encode())
+        send_str = f'{f'{content_len}'.zfill(4)}{f'{operation.value}'.zfill(4)}{json_string}'.encode()
+        socket_.sendall(send_str)
+        print(send_str)
     except Exception as ex:
         print(value)
         raise ex

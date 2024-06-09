@@ -14,6 +14,10 @@ fake = Faker()
 names = ["Alice", "Bob", "Ryan", "Sophia", "Thomas", "Ursula", "Victor", "Wendy", "Xavier", "Yvonne", "Zach"]
 
 def add_people_to_database(db):
+    '''
+    procedurely generates users and adds them into the database
+    :param db: database object
+    '''
     for name in names:
         new_user = User(username=name, password='password')
         db.insert_user(username=new_user.username,
@@ -22,15 +26,26 @@ def add_people_to_database(db):
 
 
 def generate_random_name():
-    #return fake.first_name()
+    '''
+    :return: a random name from the list
+    '''
     return random.choice(names)
 
 # Define a function to generate random amounts
 def generate_random_amount():
+    '''
+    :return: a random amount of money
+    '''
     return random.randint(50, 250)  # Random amount between 100 to 1000
 
 # Define a function to generate a random block
 def generate_random_block(last_block):
+    '''
+    procedurely generates a random valid block
+    based on the last block
+    :param last_block: the object of the last block
+    :return:
+    '''
     pub, priv = generate_key_pair()
     block = Block(last_block=last_block, miner=generate_random_name())
     transactions = []

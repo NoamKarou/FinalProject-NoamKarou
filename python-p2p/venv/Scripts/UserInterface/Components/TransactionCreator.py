@@ -7,20 +7,24 @@ from Scripts.CryptoNetwork.Transaction import Transaction
 from Scripts.CryptoNetwork.UserGenerator import generate_key_pair
 
 my_account = 'noam'
-
+database_transaction_callback = None
 class TransactionCreator:
-    def __init__(self, master, people_callback, button_callback, my_username):
+    def __init__(self, master, people_callback, button_callback, my_username, database_transaction_callback_parm, username_callback):
+        global database_transaction_callback, my_account
         '''
         :param master: tkinter master frame
         :param people_callback: a callback to a list of the people in the transaction creator
         :param button_callback:
         :param my_username:
+        :param database_transaction_callback:
         '''
         self.master = customtkinter.CTkFrame(master)
         self.transactions = people_callback()
         self.filtered_transactions = self.transactions.copy()
         self.selected_transaction = customtkinter.StringVar()
         self.username_callback = my_username
+        database_transaction_callback = database_transaction_callback_parm
+        my_account = username_callback
 
         self.people_callback = people_callback
         self.button_callback = button_callback
@@ -105,6 +109,7 @@ class TransactionCreator:
             self.filtered_transactions = self.transactions.copy()
             self.display_transactions()
         self.user_datails.configure(text=self.username_callback())
+        self.transaction_history_display.transaction_display_manager()
         self.master.after(1000, self.update_people_list)
 
     def get_people_list(self):
@@ -124,7 +129,7 @@ class Inboxtransaction(ctk.CTkFrame):
         super().__init__(parent, *args, **kwargs)
 
         self.configure(corner_radius=0)  # Add corner_radius=10 for rounded corners
-        if transaction.sender == my_account:
+        if transaction.sender == my_account():
             transaction_text = f'➖ {transaction.amount} | {transaction.receiver} | {transaction.timestamp.strftime('%Y-%m-%d %H:%M:%S')}'
         else:
             transaction_text = f'➕ {transaction.amount} | {transaction.sender} | {transaction.timestamp}'
@@ -143,7 +148,7 @@ class Inboxtransaction(ctk.CTkFrame):
         self.transaction_data = transaction_data.sender
 
     def configure_widgets(self, transaction_data):
-        if transaction_data.sender == my_account:
+        if transaction_data.sender == my_account():
             self.configure(fg_color='#3f0a13')
         else:
             self.configure(fg_color='#14763b')
@@ -191,10 +196,21 @@ class Inbox(ctk.CTkFrame):
         self.transaction_frames = []
         self.current_y = 0
 
-        pub, priv = generate_key_pair()
-        start_transaction_data = Transaction("noam", "itamar", 200, None)
 
-        self.add_transaction(start_transaction_data)
+
+        self.transaction_jsons: list[str] = list()
+
+
+    def transaction_display_manager(self):
+        global database_transaction_callback, my_account
+        temp_transactions = database_transaction_callback(my_account())
+        for transaction in temp_transactions:
+            if transaction not in self.transaction_jsons:
+                self.transaction_jsons.append(transaction)
+                self.add_transaction(Transaction.from_json(transaction))
+
+    def update_transactions(self):
+        database_transaction_callback
 
     def create_widgets(self):
         self.canvas = ctk.CTkCanvas(self, highlightthickness=0, bg='gray15')
@@ -235,6 +251,13 @@ class Inbox(ctk.CTkFrame):
 def get_transactions():
     return random.choice([['noam', 'oren'], ['noam', 'oren', 'itamar']])
 
+def transactions_manager(me):
+    pub, priv = generate_key_pair()
+    start_transaction_data = Transaction("noam", "itamar", 200, None)
+    return [random.choice([start_transaction_data.to_json(), bot_transaction.to_json()])]
+
+bot_transaction = Transaction("itamar", "noam", 200, None)
+
 if __name__ == "__main__":
     # Create the CustomTkinter app
     app = customtkinter.CTk()
@@ -246,7 +269,7 @@ if __name__ == "__main__":
     transactions_list = []
 
     # Initialize the TransactionCreator with the app as the master and the transactions list
-    transaction_creator = TransactionCreator(app, get_transactions, lambda :print(":)"), lambda : 'noam')
+    transaction_creator = TransactionCreator(app, get_transactions, lambda :print(":)"), lambda : 'noam', transactions_manager, lambda : 'noam')
 
     transaction_creator.update_users(["Dot.dotams", "Dog Gale.doggale", "Down.downfr97", "lozardo.lozardo", "otrfrsnk.otrfrenk"])
     transaction_creator.master.pack()

@@ -71,23 +71,23 @@ class Mining:
                 with self.active_block_mutex:
                     self.transaction_pool = self.database.check_for_transactions_in_database(self.transaction_pool)
                     self.active_block.transactions = self.transaction_pool
-                salt_calculator = threading.Thread(target=self._salt_generator, args=(z_count, jump_size, salt_start_point))
-                salt_calculator.start()
-                salt_calculator.join()
-                self._salt_generator(z_count, jump_size, salt_start_point)
-                salt = self.salt
-                if salt is not None or self.miner_thread_kill:
-                    self.miner_thread_kill = False
-                    if self.transaction_pool.__str__() != self.active_block.transactions.__str__():
-                        print("fail condition was called")
-                        continue
-                    self.block_publishing_callback(self.active_block)
-                    self.active_block = None
-                    salt_start_point = 0
-                salt_start_point += jump_size
-                time.sleep(0.1)
+                    salt_calculator = threading.Thread(target=self._salt_generator, args=(z_count, jump_size, salt_start_point))
+                    salt_calculator.start()
+                    salt_calculator.join()
+                    self._salt_generator(z_count, jump_size, salt_start_point)
+                    salt = self.salt
+                    if salt is not None or self.miner_thread_kill:
+                        self.miner_thread_kill = False
+                        if self.transaction_pool.__str__() != self.active_block.transactions.__str__():
+                            print("fail condition was called")
+                            continue
+                        self.block_publishing_callback(self.active_block)
+                        self.active_block = None
+                        salt_start_point = 0
+                    salt_start_point += jump_size
+                    time.sleep(0.1) # lower the frequency at which the thread runs in order to keep the ui running somthly
             else:
-                time.sleep(0.5)
+                time.sleep(0.2) # lower the frequency at which the thread runs in order to keep the ui running somthly
 
 
     def start_new_block(self, last_block: Block):

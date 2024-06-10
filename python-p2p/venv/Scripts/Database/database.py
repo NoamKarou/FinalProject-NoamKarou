@@ -4,7 +4,7 @@ import os
 from Scripts.CryptoNetwork.tests.BlockGeneratorTests import generate_random_block, add_people_to_database
 from Scripts.CryptoNetwork.BlockGenerator import Block, miner_money_multiplier
 from Scripts.CryptoNetwork.Transaction import Transaction
-
+from datetime import datetime
 
 class PeerToPeerDatabase:
     def __init__(self, port, db_folder='  '):
@@ -313,6 +313,29 @@ class PeerToPeerDatabase:
             transaction_objects.append(new_transaction)
 
         conn.close()
+
+
+    def get_transactions_with_user(self, user: str):
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM transactions WHERE sender_id = ? OR receiver_id = ?", (user, user))
+        transactions_db_format = cursor.fetchall()
+        transaction_objects = []
+
+        for transaction in transactions_db_format:
+            print(f'timestamp: {transaction[5]}')
+            new_transaction = Transaction(transaction[2],
+                                          transaction[3],
+                                          transaction[4],
+                                          transaction[6],
+                                          None,
+                                          transaction[0],
+                                          datetime.strptime(transaction[5], '%Y-%m-%d %H:%M:%S.%f')
+            )
+            transaction_objects.append(new_transaction.to_json())
+
+        conn.close()
+        return transaction_objects
 
     def get_user_balance(self, user):
         try:

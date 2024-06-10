@@ -7,7 +7,7 @@ from Scripts.UserInterface.Components import (
     UserAuthenticationField, UserCreation, ConnectToServer,
     MainMenu, UserDisplayWidget, LoginMenu, AccountCreation,
     MinerCheckbox, IDLabel, Logo, TransactionCreator, Inbox,
-    CallbackDisplay)
+    CallbackDisplay, StartingScreen)
 
 import tkinter as tk
 
@@ -29,10 +29,6 @@ class Ui:
         self.main_ui_thread.start()
 
         self.interface = crypto_network_interface.interface()
-        #self.interface.connect(20000, None, None)
-
-        #set up the UI for the username
-
         print("tried creating user")
 
     def hide_all_children(self):
@@ -97,11 +93,12 @@ class Ui:
 
     def build_main_manu(self):
         self.main_menu = MainMenu.MainMenu(self.root)
-        self.user_display = UserDisplayWidget.UserDisplayWidget(self.main_menu.frame, on_login_callback=self.load_login_screen, on_signup_callback=self.account_creation_ui)
+        self.user_display = UserDisplayWidget.UserDisplayWidget(
+            self.main_menu.frame,
+            on_login_callback=self.load_login_screen,
+            on_signup_callback=self.account_creation_ui)
         self.main_menu.add_widget_to_header(self.user_display)
 
-        #self.miner_checkbox = MinerCheckbox.MinerCheckbox(self.main_menu.frame, self.interface.is_logged_in, self.interface.update_miner_status)
-        #self.main_menu.add_widget_to_header(self.miner_checkbox.frame, side=tk.RIGHT)
 
         self.id_label = IDLabel.IDLabel(self.main_menu.sidebar, self.get_id)
         self.id_label.frame.pack(side = tk.BOTTOM, padx=15, pady=10)
@@ -112,8 +109,12 @@ class Ui:
         #notebook setup
 
         self.transaction_creator = TransactionCreator.TransactionCreator(
-            self.main_menu.notebook.tab(self.main_menu.titles['transfer']
-                                        ), self.interface.database.get_users, self.transaction_creation_callback, self.user_details_text)
+            self.main_menu.notebook.tab(self.main_menu.titles['transfer']),
+            self.interface.database.get_users, self.transaction_creation_callback,
+            self.user_details_text,
+            self.interface.database.get_transactions_with_user,
+            self.interface.get_username
+        )
         self.transaction_creator.master.pack(anchor="nw", side=tk.LEFT)
 
         self.inbox = Inbox.Inbox(self.main_menu.notebook.tab(self.main_menu.titles['inbox']))
@@ -179,8 +180,11 @@ class Ui:
             main_menu_callback=self.load_main_menu
         )
 
+    def login_callback(self, username, password):
+        encryption_key = self.interface.try_login(username, password)
+        self.on_successful_login(username, encryption_key)
+
     def on_successful_login(self, username, encryption_key):
-        self.load_main_menu()
         self.user_display.set_username(username)
         self.user_display.set_logged_in(True)
         self.interface.my_user = username
@@ -189,9 +193,14 @@ class Ui:
         self.interface.update_miner_status(True)
         #self.miner_checkbox.update_state()
 
-        self.miner_callback_display = CallbackDisplay.CallbackDisplay(self.main_menu.notebook.tab(self.main_menu.titles['mining']),
-                                                                      self.interface.mining.update_callback)
+        self.miner_callback_display = (
+            CallbackDisplay.CallbackDisplay(
+                self.main_menu.notebook.tab(
+                    self.main_menu.titles['mining']),
+                self.interface.mining.update_callback))
+
         self.miner_callback_display.pack(anchor="nw", fill=tk.BOTH, expand=True)
+        self.load_main_menu()
 
 
     def load_main_menu(self):

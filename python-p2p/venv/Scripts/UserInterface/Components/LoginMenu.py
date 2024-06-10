@@ -45,11 +45,9 @@ class LoginMenu:
         self.root.pack(pady=25)
 
     def check_login(self):
-        # Check login details (replace this with your actual authentication logic)
         username = self.username_var.get()
         password = self.password_var.get()
 
-        # Replace the condition below with your authentication logic
         result = self.login_callback(username, password)
         print("result==================")
         print(result)
@@ -63,7 +61,6 @@ class LoginMenu:
 
 
 def load_main_menu():
-    # Replace this with the code to load your main menu
     print("Main menu loaded!")
 
 if __name__ == "__main__":

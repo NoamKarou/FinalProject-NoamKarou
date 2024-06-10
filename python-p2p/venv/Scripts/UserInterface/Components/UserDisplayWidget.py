@@ -37,7 +37,7 @@ class UserDisplayWidget(ctk.CTkFrame):
     def set_username(self, username):
         self.username = username
         if self.logged_in:
-            self.label.config(text="Welcome, " + self.username)
+            self.label.configure(text="Welcome, " + self.username)
 
     def set_logged_in(self, logged_in):
         self.logged_in = logged_in

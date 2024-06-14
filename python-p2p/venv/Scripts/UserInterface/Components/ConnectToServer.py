@@ -3,6 +3,7 @@ import random
 from tkinter import messagebox
 import customtkinter as ctk
 from Scripts.UserInterface.Components import Logo
+from Scripts.P2P.portgen import generate_port
 
 class ConnectToServer:
     def __init__(self, master, connect_callback=None, my_port=None):
@@ -56,7 +57,7 @@ class ConnectToServer:
         my_port_label = ctk.CTkLabel(frame, text="My Port:")
         my_port_label.pack(pady=5)
         my_port_entry = ctk.CTkEntry(frame)
-        my_port_entry.insert(0, str(random.randint(1024, 49151)))  # Default random port
+        my_port_entry.insert(0, str(generate_port()))  # Default random port
         my_port_entry.pack(pady=5)
 
         # Connect button with user-defined callback function

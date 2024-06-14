@@ -18,7 +18,7 @@ from Scripts.CryptoNetwork import crypto_network_interface
 import threading
 
 import customtkinter as ctk
-
+from tkinter import messagebox
 class Ui:
     main_ui_thread: threading.Thread
     root: tk.Tk
@@ -46,7 +46,7 @@ class Ui:
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
-        target_width = int(1.5 / 7 * screen_width)
+        target_width = int(2 / 7 * screen_width)
         target_height = int(3 / 7 * screen_height)
 
         self.root.geometry(f"{target_width}x{target_height}")
@@ -54,8 +54,8 @@ class Ui:
         b1 = ttk.Button(self.root, text="Button 1")
         self.root.configure(bg_color='gray1')
 
-        connect_ui = self.connect_ui()
-        connect_ui.connect_frame.pack(expand=True, fill='both')
+        self.starting_screen = StartingScreen.StartingScreen(self.root, self.auto_connect, self.load_manual_connection_ui)
+        self.starting_screen.connect_frame.pack(expand=True, fill=ctk.BOTH)
 
         self.root.mainloop()
         '''  
@@ -63,7 +63,15 @@ class Ui:
         authentication.create_account_frame.pack(side=LEFT, padx=5, pady=10)
         authentication.account_creation_callback = self.create_account'''
 
+    def auto_connect(self):
+        result = self.interface.auto_connect()
+        if result != False:
+            self.hide_all_children()
+            self.build_main_manu()
+        else:
+            messagebox.showerror('auto connection error', 'auto connection failed. please try manual connection or try again later.')
 
+        print(result)
 
     def create_account(self, username: ttk.Entry, password):
         print(username.get())
@@ -80,6 +88,12 @@ class Ui:
     def connect_ui(self):
         connect_frame = ConnectToServer.ConnectToServer(self.root, self.connect_callback)
         return connect_frame
+
+    def load_manual_connection_ui(self):
+        print('trying to load ui')
+        self.hide_all_children()
+        connect_ui = self.connect_ui()
+        connect_ui.connect_frame.pack(expand=True, fill='both')
 
     def connect_callback(self, ip, out_port, in_port):
         print(out_port)

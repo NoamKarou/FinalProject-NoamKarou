@@ -94,11 +94,8 @@ class Mining:
         with self.active_block_mutex:
             new_block = Block(self.name, last_block.block_id)
             self.active_block = new_block
-            print('ffffffffffffffffffffffffffffffffffffff')
-            print(last_block)
             for transaction in self.transaction_pool:
                 if last_block.check_for_transaction_in_block(transaction):
-                    print("removing transaction =============")
                     self.transaction_pool.remove(transaction)
                 new_block.transactions = self.transaction_pool
             if len(self.transaction_pool) == 0:
@@ -147,10 +144,7 @@ class Mining:
     def on_block_added_outside(self, previous_block):
         self.transaction_pool = self.database.check_for_transactions_in_database(self.transaction_pool)
         self.miner_thread_kill = True
-        print(f'transactions: {self.transaction_pool}')
         if len(self.transaction_pool) > 0:
-            print('ggggggggggggggg')
-            print(previous_block.transactions)
             self.start_new_block(previous_block)
         else:
             self.active_block = None

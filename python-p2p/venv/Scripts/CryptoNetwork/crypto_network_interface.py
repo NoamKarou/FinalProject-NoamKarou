@@ -2,10 +2,12 @@ import random
 import threading
 import time
 import base64
+import os
 
 import operations
 from Scripts.P2P.P2pListener import P2pListener
 from Scripts.P2P.P2pNode import P2pNode
+from Scripts.P2P.portgen import generate_port
 
 from Scripts.CryptoNetwork.UserGenerator import User
 from Scripts.CryptoNetwork.Transaction import Transaction
@@ -34,6 +36,10 @@ class interface:
         :param start_ip: The starting IP address to connect to (can be None).
         :param target_port: The target port number to connect to.
         '''
+
+        if my_port == target_port:
+            raise RuntimeError('target port cant be the same as your port')
+
         self.listener = P2pListener(my_port)
         print("listener created")
 
@@ -56,6 +62,30 @@ class interface:
         self.mining = None
 
         #self.listener.thread_handle.join()
+
+    def auto_connect(self):
+        module_dir = os.path.dirname(os.path.abspath(__file__))
+        nodes_file = module_dir + f'/available_nodes.txt'
+
+        my_port = generate_port()
+
+        with open(nodes_file, 'r') as file:
+            available_nodes = file.readlines()
+        for node in available_nodes:
+            try:
+                ip, port = node.split(':')
+                try:
+                    self.connect(my_port, ip, int(port))
+                    return my_port, ip, int(port)
+                except Exception as ex:
+                    print(ex)
+                    None
+            except Exception as ex:
+                print(ex)
+                continue
+        return False
+
+
 
     def get_username(self):
         '''
@@ -330,6 +360,7 @@ class interface:
             self.database.sum_blockchain(use_cache=False)
             if self.mining is not None:
                 self.mining.on_block_added_outside(received_block)
+            return True
 
         except Exception as ex:
             raise ex
@@ -373,11 +404,13 @@ class interface:
             if None in self.database.get_transaction(received_transaction.id):
                 print("transaction failed due to database error")
                 return False
-            self.mining.add_transaction_to_transaction_pool(received_transaction)
+            if self.is_logged_in():
+                self.mining.add_transaction_to_transaction_pool(received_transaction)
+            return True
             
         except Exception as ex:
             raise ex
-            return
+            return True
 
     def validate_transaction(self, transaction: Transaction):
         sender_details = self.database.get_user(transaction.sender)

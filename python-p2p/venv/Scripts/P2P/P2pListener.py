@@ -261,3 +261,21 @@ class P2pListener:
         except Exception as ex:
             raise ex
             return False
+
+    '''
+    for the ui node viewer
+    '''
+    def get_node_details(self):
+        nodes_list = []
+        for node in self.connected_nodes.values():
+            nodes_list.append({
+            "name": f"node",
+            "ip": node.node_id[0],
+            "port": node.node_id[1]
+        })
+        nodes_list.append({
+            "name": f"you",
+            "ip": self.my_id[0],
+            "port": self.my_id[1]
+        })
+        return nodes_list

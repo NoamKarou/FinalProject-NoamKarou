@@ -323,7 +323,6 @@ class PeerToPeerDatabase:
         transaction_objects = []
 
         for transaction in transactions_db_format:
-            print(f'timestamp: {transaction[5]}')
             new_transaction = Transaction(transaction[2],
                                           transaction[3],
                                           transaction[4],
@@ -363,8 +362,6 @@ class PeerToPeerDatabase:
             cursor.execute("SELECT * FROM transactions WHERE block_id = ?", (block,))
             transactions = cursor.fetchall()
 
-            print(f'current caching block: {block}')
-
             cursor.execute("SELECT miner FROM blocks WHERE block_id = ?", (block,))
             miner = cursor.fetchone()[0]
 
@@ -379,12 +376,6 @@ class PeerToPeerDatabase:
             miner_bonus = miner_money_multiplier * (len(transactions) + 1)
 
             user_balance[miner] = user_balance.get(miner, 0) + miner_bonus
-            print('==============')
-            print(user_balance.get(miner, 0))
-            print(miner_bonus)
-            print(sum(user_balance.values()))
-            print(len(transactions))
-            print('=================')
 
         self.user_balance_cache = (block_count, user_balance)
         conn.close()

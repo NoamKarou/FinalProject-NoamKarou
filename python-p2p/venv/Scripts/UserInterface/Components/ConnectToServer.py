@@ -23,7 +23,7 @@ class ConnectToServer:
                 self.connect_callback(ip, port, my_port)
 
         except Exception as ex:
-            #raise (ex)
+            raise (ex)
             messagebox.showerror("Error", "Invalid port. Please enter a valid integer.")
             return
 

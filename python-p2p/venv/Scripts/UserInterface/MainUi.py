@@ -7,7 +7,8 @@ from Scripts.UserInterface.Components import (
     UserAuthenticationField, UserCreation, ConnectToServer,
     MainMenu, UserDisplayWidget, LoginMenu, AccountCreation,
     MinerCheckbox, IDLabel, Logo, TransactionCreator, Inbox,
-    CallbackDisplay, StartingScreen)
+    CallbackDisplay, StartingScreen, connection_viewer,
+    BlockViewer)
 
 import tkinter as tk
 
@@ -47,7 +48,7 @@ class Ui:
         screen_height = self.root.winfo_screenheight()
 
         target_width = int(2 / 7 * screen_width)
-        target_height = int(3 / 7 * screen_height)
+        target_height = int(2.7 / 7 * screen_height)
 
         self.root.geometry(f"{target_width}x{target_height}")
 
@@ -131,6 +132,12 @@ class Ui:
         )
         self.transaction_creator.master.pack(anchor="nw", side=tk.LEFT)
 
+        self.connections_viewer = connection_viewer.ConnectionsViewer(self.main_menu.notebook.tab(self.main_menu.titles['connections']),
+                                                                          self.interface.listener.get_node_details)
+
+        self.block_viewer = BlockViewer.BlockApp(self.main_menu.notebook.tab(self.main_menu.titles['blocks']),
+                                                 self.interface.database.get_all_block)
+
         self.inbox = Inbox.Inbox(self.main_menu.notebook.tab(self.main_menu.titles['inbox']))
         self.inbox.pack(anchor="nw", fill=tk.BOTH, expand=True)
 
@@ -139,8 +146,8 @@ class Ui:
 
     def user_details_text(self):
         ret_string = self.interface.get_username()
-        ret_string += f'\n{self.interface.database.get_user_balance(self.interface.get_username())}'
-        ret_string += f'\n{datetime.now()}'
+        ret_string += f'\nbalance: {self.interface.database.get_user_balance(self.interface.get_username())}'
+        ret_string += f'\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
         return ret_string
 
     def transaction_creation_callback(self):
@@ -212,6 +219,8 @@ class Ui:
                 self.main_menu.notebook.tab(
                     self.main_menu.titles['mining']),
                 self.interface.mining.update_callback))
+
+        self.interface.database.sum_blockchain()
 
         self.miner_callback_display.pack(anchor="nw", fill=tk.BOTH, expand=True)
         self.load_main_menu()

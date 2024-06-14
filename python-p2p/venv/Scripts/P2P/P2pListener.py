@@ -3,6 +3,7 @@ import time
 from Scripts.P2P import P2pNode
 import threading
 from protocol import protocol_read, protocol_write, Operations
+import random
 
 HANDSHAKE_PHRASE = "rock and stone"
 
@@ -265,17 +266,44 @@ class P2pListener:
     '''
     for the ui node viewer
     '''
+
+    #def get_node_details(self):
+    #    # Simulating fetching node details (In real scenario, this can be an API call or database query)
+    #    new_nodes = [
+    #        {"name": "you", "ip": "192.168.1.1", "port": "8080"}
+    #    ]
+#
+    #    for i in range(1, random.randint(4, 6)):
+    #        new_nodes.append({
+    #            "name": f"node{i}",
+    #            "ip": f"192.168.1.{random.randint(1, 254)}",
+    #            "port": f"{random.randint(8000, 9000)}"
+    #        })
+#
+    #    new_connections = [("you", node["name"]) for node in new_nodes if node["name"] != "you"]
+#
+    #    print(new_nodes)
+    #    print(new_connections)
+#
+    #    return new_nodes, new_connections
     def get_node_details(self):
         nodes_list = []
+        i = 0
         for node in self.connected_nodes.values():
+            i += 1
+            ip, port = node.node_id.split(':')
             nodes_list.append({
-            "name": f"node",
-            "ip": node.node_id[0],
-            "port": node.node_id[1]
-        })
+            "name": f"node{i}",
+            "ip": ip,
+            "port": port
+            })
+
+        ip, port = self.my_id.split(':')
         nodes_list.append({
             "name": f"you",
-            "ip": self.my_id[0],
-            "port": self.my_id[1]
+            "ip": ip,
+            "port": port
         })
-        return nodes_list
+        new_connections = [("you", node["name"]) for node in nodes_list if node["name"] != "you"]
+
+        return nodes_list, new_connections

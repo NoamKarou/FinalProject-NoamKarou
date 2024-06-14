@@ -35,9 +35,8 @@ class MainMenu:
 
         self.titles = {
             'transfer': "create\n transfer ",
-            'history': " transaction \nhistory ",
-            'network': " network \n mapper ",
             'connections': " current \n connections ",
+            'blocks': " block \n history ",
             'mining': " miner \n summary ",
             'inbox': "  notification  \n  inbox",
         }

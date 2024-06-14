@@ -49,6 +49,7 @@ class PeerToPeerDatabase:
                         previous_block_id INTEGER,
                         previous_block_hash TEXT,
                         miner TEXT,
+                        signature TEXT,
                         FOREIGN KEY (previous_block_id) REFERENCES blocks(block_id)
                     )
                 ''')
@@ -173,15 +174,16 @@ class PeerToPeerDatabase:
         previous_block_id = block.block_id - 1
         previous_block_hash = block.last_block_hash
         miner = block.miner
+        signature = block.salt
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
 
         try:
             # Insert transaction into the transactions table
             cursor.execute('''
-                INSERT INTO blocks (block_id, previous_block_id, previous_block_hash, miner)
-                VALUES (?, ?, ?, ?)
-            ''', (block_id, previous_block_id, previous_block_hash, miner))
+                INSERT INTO blocks (block_id, previous_block_id, previous_block_hash, miner, signature)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (block_id, previous_block_id, previous_block_hash, miner, signature))
             conn.commit()
             #print("Transaction added successfully.")
         except sqlite3.Error as e:
@@ -210,7 +212,7 @@ class PeerToPeerDatabase:
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT block_id, previous_block_id, previous_block_hash, miner
+            SELECT block_id, previous_block_id, previous_block_hash, miner, signature
             FROM blocks
             WHERE block_id = ?
         ''', (block_id,))
@@ -241,8 +243,58 @@ class PeerToPeerDatabase:
         block_object = Block(block_details[3], block_details[1])
         block_object.last_block_hash = block_details[2]
         block_object.block_id = block_details[0]
+        block_object.salt = block_details[4]
         return block_object
 
+
+
+
+
+    def get_all_block(self):
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+
+        all_blocks = []
+        block_count = self.get_latest_block_id()
+        if block_count is None:
+            block_count = 0
+        for block_id in range(block_count):
+            cursor.execute('''
+                        SELECT block_id, previous_block_id, previous_block_hash, miner, signature
+                        FROM blocks
+                        WHERE block_id = ?
+                    ''', (block_id,))
+
+            block_details = cursor.fetchall()[0]
+
+            cursor.execute('''
+                                SELECT tx_id, block_id, sender_id, receiver_id, amount, timestamp, signature
+                                FROM transactions
+                                WHERE block_id = ?
+                            ''', (block_id,))
+
+            transactions_db_format = cursor.fetchall()
+            transaction_objects = []
+            for transaction in transactions_db_format:
+                new_transaction = Transaction(transaction[2],
+                                              transaction[3],
+                                              transaction[4],
+                                              transaction[6],
+                                              None,
+                                              transaction[0],
+                                              transaction[5])
+                block_object.transactions.append(new_transaction)
+
+
+
+            block_object = Block(block_details[3], block_details[1])
+            block_object.last_block_hash = block_details[2]
+            block_object.block_id = block_details[0]
+            block_object.salt = block_details[4]
+
+            all_blocks.append(block_object)
+        conn.close()
+        return all_blocks
 
     def get_users(self):
         conn = sqlite3.connect(self.db_file)

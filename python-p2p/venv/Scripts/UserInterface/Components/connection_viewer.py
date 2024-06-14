@@ -9,7 +9,7 @@ class ConnectionsViewer:
         self.fetch_callback = fetch_callback
 
         # Create a canvas widget
-        self.canvas = ctk.CTkCanvas(parent, width=800, height=800, bg='gray10')
+        self.canvas = ctk.CTkCanvas(parent, width=800, height=600, bg='#2d2d2d', borderwidth=0, highlightthickness=0)
         self.canvas.pack()
 
         # Create a label to display IP and port information
@@ -48,27 +48,27 @@ class ConnectionsViewer:
 
     def update_graph(self):
         self.canvas.delete("all")
-
+        if len(self.nodes) == 1:
+            return
         # Center and radius for the circular layout
-        center_x, center_y = 400, 400
+        center_x, center_y = 400, 300
         radius = 200
 
         # Calculate positions for nodes
         positions = self.calculate_positions(self.nodes, center_x, center_y, radius)
-
         # Draw connections
         for conn in self.connections:
             node1 = next(node for node in self.nodes if node["name"] == conn[0])
             node2 = next(node for node in self.nodes if node["name"] == conn[1])
             pos1 = positions[self.nodes.index(node1)]
             pos2 = positions[self.nodes.index(node2)]
-            self.canvas.create_line(pos1[0], pos1[1], pos2[0], pos2[1], fill="black")
+            self.canvas.create_line(pos1[0], pos1[1], pos2[0], pos2[1], fill="#d3d3d3", width=10)
 
         # Draw nodes
         for i, node in enumerate(self.nodes):
             x, y = positions[i]
             r = 45
-            fill_color = "yellow" if node["name"] == "you" else "gray"
+            fill_color = "#e93e3e" if node["name"] == "you" else "#cbcbcb"
             oval_id = self.canvas.create_oval(x - r, y - r, x + r, y + r, fill=fill_color)
             #self.canvas.create_text(x, y, text=node["name"], fill="green")
 
@@ -97,12 +97,13 @@ def fetch_callback():
     return new_nodes, new_connections
 
 
-# Create the main window
-root = ctk.CTk()
-root.title("Graph Visualization")
+if __name__ == '__main__':
+    # Create the main window
+    root = ctk.CTk()
+    root.title("Graph Visualization")
 
-# Create an instance of ConnectionsViewer
-viewer = ConnectionsViewer(root, fetch_callback)
+    # Create an instance of ConnectionsViewer
+    viewer = ConnectionsViewer(root, fetch_callback)
 
-# Start the customtkinter event loop
-root.mainloop()
+    # Start the customtkinter event loop
+    root.mainloop()

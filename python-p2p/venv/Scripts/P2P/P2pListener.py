@@ -54,38 +54,47 @@ class P2pListener:
             print("connection failed")
 
     def server_loop(self):
-        print("running the server loop")
-        self.server_socket.listen()
-        while True:
-            client_socket, self.addr = self.server_socket.accept()
-            print(f'{self.my_id}: accepted client: {self.addr}')
-            status, username = self.server_handshake_protocol(client_socket)
-            if status:
-                print("clients username: " + username)
+        try:
+            print("running the server loop")
+            self.server_socket.listen()
+            while True:
+                client_socket, self.addr = self.server_socket.accept()
+                print(f'{self.my_id}: accepted client: {self.addr}')
+                status, username = self.server_handshake_protocol(client_socket)
+                if status:
+                    print("clients username: " + username)
 
-                new_node = P2pNode.P2pNode(username, client_socket)
-                thread_handle = threading.Thread(target=self.listen_to_node, args=(new_node,))
-                thread_handle.start()
-                new_node.thread_handle = thread_handle
+                    new_node = P2pNode.P2pNode(username, client_socket)
+                    thread_handle = threading.Thread(target=self.listen_to_node, args=(new_node,))
+                    thread_handle.start()
+                    new_node.thread_handle = thread_handle
 
-                self.connected_nodes[username] = new_node
-                print('accepted client')
-            else:
-                print('did not accept client')
+                    self.connected_nodes[username] = new_node
+                    print('accepted client')
+                else:
+                    print('did not accept client')
+        except Exception as ex:
+            raise ex
 
     def listen_to_node(self, node: P2pNode.P2pNode):
-        print(f"{self.my_id}: listening...")
-        while True:
-            operation, content = protocol_read(node.socket)
-            print(f"{self.my_id}: got a broadcast!")
-            match operation:
-                case Operations.BROADCASTING:
-                    self.broadcasting_callback(content)
-                case Operations.DIRECT:
-                    result = self.direct_callback(content)
-                    protocol_write(node.socket, result, Operations.DIRECT_RETURN)
-                case Operations.DIRECT_RETURN:
-                    self.direct_callback(content, returning=True)
+        try:
+            print(f"{self.my_id}: listening...")
+            while True:
+                operation, content = protocol_read(node.socket)
+                print(f"{self.my_id}: got a broadcast!")
+                match operation:
+                    case Operations.BROADCASTING:
+                        self.broadcasting_callback(content)
+                    case Operations.DIRECT:
+                        result = self.direct_callback(content)
+                        protocol_write(node.socket, result, Operations.DIRECT_RETURN)
+                    case Operations.DIRECT_RETURN:
+                        self.direct_callback(content, returning=True)
+        except Exception as ex:
+            print("had error with node")
+            self.connected_nodes.pop(node.node_id)
+            raise ex
+
 
     '''
     ===================================

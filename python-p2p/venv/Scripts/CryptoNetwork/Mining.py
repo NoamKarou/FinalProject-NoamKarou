@@ -54,8 +54,11 @@ class Mining:
         self.block_publishing_callback = block_publishing_callback
         latest_block = self.database.get_latest_block_id()
         if latest_block == None:
+            self.active_block = Block(self.name, -1, -1)
             latest_block = -1
-        self.active_block = Block(self.name, latest_block)
+        else:
+            latest_block = self.database.get_block(latest_block)
+            self.active_block = Block(self.name, latest_block.block_id, latest_block.last_block_hash)
         self.active_block_mutex = threading.RLock()
         self.mining_thread = threading.Thread(target=self.mining_thread)
         self.mining_thread.start()
@@ -92,7 +95,7 @@ class Mining:
 
     def start_new_block(self, last_block: Block):
         with self.active_block_mutex:
-            new_block = Block(self.name, last_block.block_id)
+            new_block = Block(self.name, last_block.block_id, last_block.hash_block())
             self.active_block = new_block
             for transaction in self.transaction_pool:
                 if last_block.check_for_transaction_in_block(transaction):

@@ -20,11 +20,14 @@ class TransactionCreator:
         '''
         self.master = customtkinter.CTkFrame(master)
         self.transactions = people_callback()
+
         self.filtered_transactions = self.transactions.copy()
         self.selected_transaction = customtkinter.StringVar()
         self.username_callback = my_username
         database_transaction_callback = database_transaction_callback_parm
         my_account = username_callback
+        if my_account() in self.transactions:
+            self.transactions.remove(my_account())
 
         self.people_callback = people_callback
         self.button_callback = button_callback

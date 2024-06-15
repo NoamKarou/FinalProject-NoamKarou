@@ -240,8 +240,7 @@ class PeerToPeerDatabase:
         conn.close()
 
 
-        block_object = Block(block_details[3], block_details[1])
-        block_object.last_block_hash = block_details[2]
+        block_object = Block(block_details[3], block_details[1], block_details[2])
         block_object.block_id = block_details[0]
         block_object.salt = block_details[4]
         return block_object
@@ -287,8 +286,7 @@ class PeerToPeerDatabase:
 
 
 
-            block_object = Block(block_details[3], block_details[1])
-            block_object.last_block_hash = block_details[2]
+            block_object = Block(block_details[3], block_details[1], block_details[2])
             block_object.block_id = block_details[0]
             block_object.salt = block_details[4]
 

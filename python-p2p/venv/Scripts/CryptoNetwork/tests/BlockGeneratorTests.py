@@ -47,7 +47,7 @@ def generate_random_block(last_block):
     :return:
     '''
     pub, priv = generate_key_pair()
-    block = Block(last_block=last_block, miner=generate_random_name())
+    block = Block(last_block=last_block, miner=generate_random_name(), last_block_hash='last_block hash')
     transactions = []
 
     num_transactions = random.randint(6, 13)  # Random number of transactions per block

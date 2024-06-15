@@ -28,17 +28,20 @@ class Block:
     transactions: list[Transaction]
     salt: str
 
-    def __init__(self, miner, last_block=None):
+    def __init__(self, miner, last_block=None, last_block_hash: str = None):
         '''
         :param miner: the miner of the current block
         :param last_block: the id of the last block
         '''
+
         if last_block is None:
-            self.last_block_hash = 0
+            self.last_block_hash = last_block_hash
             self.block_id = 1
             self.miner = miner
         else:
-            self.last_block_hash = last_block
+            if last_block_hash is None:
+                raise ValueError('PUT A HASH IN THE BLOCK')
+            self.last_block_hash = last_block_hash
             self.block_id = last_block + 1
             self.miner = miner
         self.salt = "None"
@@ -116,6 +119,7 @@ class Block:
         user_dict = json.loads(json_string)
         return_block = cls(
             user_dict['miner'],
+            user_dict['block_id'] - 1,
             user_dict['last_block'])
         return_block.block_id = user_dict['block_id']
 
